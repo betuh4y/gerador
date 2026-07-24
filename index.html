@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Encartes — Mercadinho</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      :root {
+        --bg: #111418;
+        --panel: #1b2027;
+        --panel2: #232a33;
+        --line: #313a45;
+        --txt: #e8edf2;
+        --mut: #9aa7b4;
+        --accent: #ffd21e;
+        --accent2: #e63946;
+        --ok: #37c871;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0
+      }
+
+      body {
+        font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--txt);
+        min-height: 100vh
+      }
+
+      header.app {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        background: linear-gradient(90deg, #e63946, #b5121f);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .4)
+      }
+
+      header.app .cart {
+        font-size: 26px
+      }
+
+      header.app h1 {
+        font-size: 19px;
+        letter-spacing: .5px
+      }
+
+      header.app small {
+        opacity: .85;
+        display: block;
+        font-weight: 400
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 0;
+        min-height: calc(100vh - 60px)
+      }
+
+      @media(max-width:960px) {
+        .layout {
+          grid-template-columns: 1fr
+        }
+      }
+
+      /* ------- sidebar ------- */
+      aside {
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 16px;
+        overflow-y: auto;
+        max-height: calc(100vh - 60px)
+      }
+
+      @media(max-width:960px) {
+        aside {
+          max-height: none;
+          border-right: none;
+          border-bottom: 1px solid var(--line)
+        }
+      }
+
+      .sec {
+        background: var(--panel2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-bottom: 14px;
+        overflow: hidden
+      }
+
+      .sec>h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 11px 14px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        color: var(--accent)
+      }
+
+      .sec>h2::after {
+        content: "▾";
+        transition: .2s;
+        color: var(--mut)
+      }
+
+      .sec.closed>h2::after {
+        transform: rotate(-90deg)
+      }
+
+      .sec .body {
+        padding: 0 14px 14px
+      }
+
+      .sec.closed .body {
+        display: none
+      }
+
+      label.f {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin: 10px 0 4px
+      }
+
+      input[type=text],
+      input[type=url],
+      input[type=number],
+      select,
+      textarea {
+        width: 100%;
+        background: #12161c;
+        border: 1px solid var(--line);
+        color: var(--txt);
+        border-radius: 7px;
+        padding: 9px 10px;
+        font-size: 14px;
+        outline: none
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--accent)
+      }
+
+      .row {
+        display: flex;
+        gap: 8px
+      }
+
+      .row>* {
+        flex: 1
+      }
+
+      .chk {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        margin: 8px 0;
+        cursor: pointer
+      }
+
+      .chk input {
+        accent-color: var(--accent);
+        width: 16px;
+        height: 16px
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px
+      }
+
+      .btn-add {
+        width: 100%;
+        padding: 11px;
+        background: var(--ok);
+        color: #08240f;
+        margin-top: 12px
+      }
+
+      .btn-add:hover {
+        filter: brightness(1.1)
+      }
+
+      .btn-dl {
+        padding: 12px 18px;
+        background: var(--accent);
+        color: #221a00
+      }
+
+      .btn-dl:hover {
+        filter: brightness(1.08)
+      }
+
+      .prodlist {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px
+      }
+
+      .pitem {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #12161c;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px
+      }
+
+      .pitem img {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        background: #fff;
+        border-radius: 6px
+      }
+
+      .pitem .pinfo {
+        flex: 1;
+        min-width: 0
+      }
+
+      .pitem .pinfo b {
+        font-size: 13px;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+      }
+
+      .pitem .pinfo span {
+        font-size: 12px;
+        color: var(--mut)
+      }
+
+      .pitem .acts {
+        display: flex;
+        gap: 4px
+      }
+
+      .pitem .acts button {
+        background: var(--panel2);
+        color: var(--txt);
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        font-size: 13px
+      }
+
+      .pitem .acts button.del {
+        color: #ff7b7b
+      }
+
+      .tplpick {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 6px
+      }
+
+      .tpl {
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 6px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 12px
+      }
+
+      .tpl .sw {
+        height: 34px;
+        border-radius: 5px;
+        margin-bottom: 6px
+      }
+
+      .tpl.on {
+        border-color: var(--accent);
+        background: #2a2410
+      }
+
+      .fmtpick {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 6px
+      }
+
+      .fmt {
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        padding: 9px;
+        cursor: pointer;
+        font-size: 12px;
+        text-align: center
+      }
+
+      .fmt small {
+        display: block;
+        color: var(--mut);
+        margin-top: 2px
+      }
+
+      .fmt.on {
+        border-color: var(--accent);
+        background: #2a2410
+      }
+
+      /* ------- preview ------- */
+      main {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        overflow: auto
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center
+      }
+
+      .zoombox {
+        color: var(--mut);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px
+      }
+
+      #stageWrap {
+        background: #0b0d10;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 100%;
+        overflow: auto
+      }
+
+      #scale {
+        transform-origin: top left
+      }
+
+      /* ================= POSTER ================= */
+      #poster {
+        position: relative;
+        overflow: hidden;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        display: flex;
+        flex-direction: column
+      }
+
+      #poster * {
+        box-sizing: border-box
+      }
+
+      .p-head {
+        padding: 26px 34px 18px;
+        position: relative;
+        flex: 0 0 auto
+      }
+
+      .p-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px
+      }
+
+      .p-logo {
+        width: 74px;
+        height: 74px;
+        border-radius: 16px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 38px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+        overflow: hidden
+      }
+
+      .p-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover
+      }
+
+      .p-name {
+        font-size: 44px;
+        font-weight: 900;
+        line-height: 1.05;
+        text-transform: uppercase;
+        text-shadow: 2px 3px 0 rgba(0, 0, 0, .35)
+      }
+
+      .p-slogan {
+        font-size: 17px;
+        font-weight: 600;
+        opacity: .92;
+        margin-top: 4px
+      }
+
+      .p-title {
+        margin-top: 18px;
+        text-align: center
+      }
+
+      .p-title .t1 {
+        font-size: 62px;
+        font-weight: 900;
+        line-height: 1.02;
+        text-transform: uppercase;
+        text-shadow: 3px 4px 0 rgba(0, 0, 0, .4)
+      }
+
+      .p-title .t2 {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 8px 26px;
+        font-size: 22px;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-radius: 8px
+      }
+
+      .p-badges {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap
+      }
+
+      .p-badge {
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-size: 15px;
+        font-weight: 800;
+        text-transform: uppercase
+      }
+
+      .p-valid {
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 8px;
+        margin-top: 14px;
+        text-transform: uppercase;
+        letter-spacing: .5px
+      }
+
+      .p-grid {
+        flex: 1;
+        display: grid;
+        gap: 16px;
+        padding: 20px 30px;
+        align-content: start
+      }
+
+      .p-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px 12px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        color: #222;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .25)
+      }
+
+      .p-cat {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 3px 9px;
+        border-radius: 999px;
+        color: #fff
+      }
+
+      .p-off {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 900;
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, .3)
+      }
+
+      .p-img {
+        width: 100%;
+        height: 130px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 14px
+      }
+
+      .p-img img {
+        max-width: 88%;
+        max-height: 100%;
+        object-fit: contain
+      }
+
+      .p-img .noimg {
+        font-size: 52px;
+        opacity: .25
+      }
+
+      .p-pname {
+        font-size: 17px;
+        font-weight: 800;
+        line-height: 1.15;
+        margin-top: 8px;
+        min-height: 38px;
+        display: flex;
+        align-items: center
+      }
+
+      .p-old {
+        font-size: 14px;
+        color: #888;
+        text-decoration: line-through;
+        font-weight: 600;
+        margin-top: 2px
+      }
+
+      .p-price {
+        width: calc(100% + 24px);
+        margin: 8px -12px 0;
+        padding: 8px 6px 10px;
+        color: #fff;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 3px
+      }
+
+      .p-price .rs {
+        font-size: 16px;
+        font-weight: 800
+      }
+
+      .p-price .int {
+        font-size: 40px;
+        font-weight: 900;
+        line-height: 1
+      }
+
+      .p-price .dec {
+        font-size: 20px;
+        font-weight: 900
+      }
+
+      .p-price .un {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        opacity: .9;
+        margin-left: 4px;
+        align-self: flex-end
+      }
+
+      .p-foot {
+        flex: 0 0 auto;
+        padding: 16px 30px 24px;
+        text-align: center
+      }
+
+      .p-foot .f1 {
+        font-size: 19px;
+        font-weight: 800
+      }
+
+      .p-foot .f2 {
+        font-size: 15px;
+        opacity: .9;
+        margin-top: 3px
+      }
+
+      .p-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 50px 20px;
+        font-size: 20px;
+        opacity: .7;
+        font-weight: 600
+      }
+    </style>
+    <script type="text/javascript" src="./index.js" defer=""></script>
+    <link rel="stylesheet" href="./index.css">
+  </head>
+
+  <body>
+
+    <header class="app">
+      <div class="cart">🛒</div>
+      <div>
+        <h1>Gerador de Encartes <small>Crie posts de ofertas para Instagram e WhatsApp</small></h1>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside>
+
+        <!-- MERCADO -->
+        <div class="sec">
+          <h2 onclick="tg(this)">🏪 Dados do mercado</h2>
+          <div class="body">
+            <label class="f">Nome do mercado</label>
+            <input type="text" id="mName" value="Mercadinho Bom Preço" oninput="render()">
+            <label class="f">Slogan (opcional)</label>
+            <input type="text" id="mSlogan" value="Aqui o preço é baixo de verdade!" oninput="render()">
+            <label class="f">URL da logo (opcional — se vazio usa 🛒)</label>
+            <input type="url" id="mLogo" placeholder="https://exemplo.com/logo.png" oninput="render()">
+            <label class="f">Rodapé (endereço / telefone / WhatsApp)</label>
+            <input type="text" id="mFoot" value="📍 Rua das Flores, 123 • 📱 (81) 99999-0000" oninput="render()">
+          </div>
+        </div>
+
+        <!-- CAMPANHA -->
+        <div class="sec">
+          <h2 onclick="tg(this)">📣 Campanha</h2>
+          <div class="body">
+            <label class="f">Título da promoção</label>
+            <input type="text" id="cTitle" value="Semana de Ofertas" oninput="render()">
+            <label class="f">Subtítulo</label>
+            <input type="text" id="cSub" value="Os melhores produtos com os melhores preços" oninput="render()">
+            <label class="f">Tipo de promoção</label>
+            <select id="cType" onchange="render()">
+              <option>Oferta da Semana</option>
+              <option>Oferta Relâmpago</option>
+              <option>Super Ofertas</option>
+              <option>Queima de Estoque</option>
+              <option>Fim de Semana</option>
+              <option>Dia do Cliente</option>
+              <option value="">— nenhum —</option>
+            </select>
+            <label class="f">Validade</label>
+            <input type="text" id="cValid" value="Válido de 24/07 a 31/07 ou enquanto durar o estoque" oninput="render()">
+          </div>
+        </div>
+
+        <!-- MODELO / FORMATO -->
+        <div class="sec">
+          <h2 onclick="tg(this)">🎨 Modelo e formato</h2>
+          <div class="body">
+            <label class="f">Modelo visual</label>
+            <div class="tplpick" id="tplPick"></div>
+            <label class="f">Formato de publicação</label>
+            <div class="fmtpick" id="fmtPick"></div>
+          </div>
+        </div>
+
+        <!-- TEXTO -->
+        <div class="sec closed">
+          <h2 onclick="tg(this)">🔤 Fonte e cores do texto</h2>
+          <div class="body">
+            <label class="f">Fonte do encarte</label>
+            <select id="tFont" onchange="render()">
+              <option value="'Segoe UI',Arial,sans-serif">Padrão (Segoe UI)</option>
+              <option value="Arial,Helvetica,sans-serif">Arial</option>
+              <option value="'Arial Black',Arial,sans-serif">Arial Black (grossa)</option>
+              <option value="Impact,'Arial Black',sans-serif">Impact (encarte)</option>
+              <option value="Verdana,Geneva,sans-serif">Verdana</option>
+              <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
+              <option value="Georgia,'Times New Roman',serif">Georgia (serifada)</option>
+              <option value="'Courier New',monospace">Courier (máquina)</option>
+            </select>
+            <label class="f">Tamanho do título da promoção: <b id="vT1">62</b>px</label>
+            <input type="range" min="36" max="96" value="62" id="szTitle" oninput="$('vT1').textContent=this.value;render()">
+            <label class="f">Tamanho do nome do produto: <b id="vT2">17</b>px</label>
+            <input type="range" min="12" max="28" value="17" id="szPname" oninput="$('vT2').textContent=this.value;render()">
+            <label class="f">Tamanho do preço: <b id="vT3">40</b>px</label>
+            <input type="range" min="26" max="60" value="40" id="szPrice" oninput="$('vT3').textContent=this.value;render()">
+            <label class="chk"><input type="checkbox" id="useColors" onchange="render()"> Personalizar cores do texto</label>
+            <div id="colorBox" style="display:none">
+              <div class="row">
+                <div><label class="f">Título</label><input type="color" id="cT1" value="#ffffff" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
+                <div><label class="f">Cabeçalho</label><input type="color" id="cHead" value="#ffffff" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
+              </div>
+              <div class="row">
+                <div><label class="f">Nome do produto</label><input type="color" id="cPname" value="#222222" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
+                <div><label class="f">Preço</label><input type="color" id="cPrice" value="#c40000" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
+              </div>
+              <button class="btn-add" style="background:var(--panel);color:var(--txt);border:1px solid var(--line)" onclick="$('useColors').checked=false;render()">Voltar às cores do modelo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ELEMENTOS -->
+        <div class="sec">
+          <h2 onclick="tg(this)">⚙️ Elementos do encarte</h2>
+          <div class="body">
+            <label class="chk"><input type="checkbox" id="showSlogan" checked="" onchange="render()"> Mostrar slogan</label>
+            <label class="chk"><input type="checkbox" id="showType" checked="" onchange="render()"> Mostrar tipo de promoção</label>
+            <label class="chk"><input type="checkbox" id="showCat" checked="" onchange="render()"> Mostrar categoria nos produtos</label>
+            <label class="chk"><input type="checkbox" id="showValid" checked="" onchange="render()"> Mostrar validade</label>
+            <label class="chk"><input type="checkbox" id="showOld" checked="" onchange="render()"> Mostrar preço antigo (riscado)</label>
+            <label class="chk"><input type="checkbox" id="showOff" checked="" onchange="render()"> Mostrar selo de desconto (%)</label>
+            <label class="chk"><input type="checkbox" id="showFoot" checked="" onchange="render()"> Mostrar rodapé</label>
+          </div>
+        </div>
+
+        <!-- PRODUTOS -->
+        <div class="sec">
+          <h2 onclick="tg(this)">📦 Adicionar produto</h2>
+          <div class="body">
+            <label class="f">Nome do produto</label>
+            <input type="text" id="pName" placeholder="Arroz Soltinho 5kg">
+            <label class="f">URL da imagem do produto</label>
+            <input type="url" id="pImg" placeholder="https://exemplo.com/arroz.png">
+            <div class="row">
+              <div>
+                <label class="f">Preço promocional (R$)</label>
+                <input type="number" id="pPrice" step="0.01" min="0" placeholder="15,99">
+              </div>
+              <div>
+                <label class="f">Preço antigo (opcional)</label>
+                <input type="number" id="pOld" step="0.01" min="0" placeholder="18,99">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label class="f">Vendido por</label>
+                <select id="pUnit">
+                  <option value="unidade">Unidade</option>
+                  <option value="caixa">Caixa</option>
+                  <option value="kg">Kg</option>
+                  <option value="pacote">Pacote</option>
+                  <option value="fardo">Fardo</option>
+                  <option value="dúzia">Dúzia</option>
+                </select>
+              </div>
+              <div>
+                <label class="f">Categoria</label>
+                <select id="pCat">
+                  <option>Mercearia</option>
+                  <option>Bebidas</option>
+                  <option>Hortifruti</option>
+                  <option>Açougue</option>
+                  <option>Frios e Laticínios</option>
+                  <option>Padaria</option>
+                  <option>Limpeza</option>
+                  <option>Higiene</option>
+                  <option>Pet</option>
+                  <option>Bazar</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn-add" id="btnAdd" onclick="addProd()">+ Adicionar produto</button>
+            <button class="btn-add" id="btnCancel" style="display:none;background:var(--panel);color:var(--txt);border:1px solid var(--line)" onclick="cancelEdit()">Cancelar edição</button>
+            <div class="prodlist" id="plist"></div>
+          </div>
+        </div>
+
+      </aside>
+
+      <main>
+        <div class="toolbar">
+          <button class="btn-dl" onclick="download()">⬇️ Baixar imagem (PNG)</button>
+          <button class="btn-dl" style="background:#37c871;color:#08240f" onclick="saveProject()">💾 Salvar projeto</button>
+          <button class="btn-dl" style="background:#4a90d9;color:#fff" onclick="$('fileImport').click()">📂 Importar projeto</button>
+          <input type="file" id="fileImport" accept=".json,application/json" style="display:none" onchange="importProject(this)">
+          <div class="zoombox">Zoom <input type="range" min="20" max="100" value="42" id="zoom" oninput="applyZoom()"> <span id="zoomv">42%</span></div>
+        </div>
+        <div id="stageWrap">
+          <div id="scale">
+            <div id="poster"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      /* ---------- state ---------- */
+      const $ = id => document.getElementById(id);
+      let products = [{
+          name: "Arroz Soltinho 5kg",
+          img: "",
+          price: 15.99,
+          old: 18.99,
+          unit: "unidade",
+          cat: "Mercearia"
+        },
+        {
+          name: "Feijão Carioca 1kg",
+          img: "",
+          price: 7.99,
+          old: 8.99,
+          unit: "pacote",
+          cat: "Mercearia"
+        },
+        {
+          name: "Café Tradicional 500g",
+          img: "",
+          price: 11.99,
+          old: 12.99,
+          unit: "unidade",
+          cat: "Mercearia"
+        },
+        {
+          name: "Refrigerante 2L",
+          img: "",
+          price: 6.49,
+          old: 8.99,
+          unit: "unidade",
+          cat: "Bebidas"
+        },
+      ];
+      let tpl = "classico",
+        fmt = "feed";
+
+      /* ---------- templates (inspirados nos 3 encartes) ---------- */
+      const TPLS = {
+        classico: {
+          label: "Clássico",
+          sw: "linear-gradient(135deg,#1565d8,#0a3d91)",
+          bg: "linear-gradient(160deg,#1e78e8 0%,#0a3d91 55%,#062a68 100%)",
+          headTxt: "#fff",
+          t1: "#fff",
+          t2bg: "#ffe600",
+          t2txt: "#c40000",
+          badgeBg: "#e63946",
+          badgeTxt: "#fff",
+          validBg: "#c40000",
+          validTxt: "#fff",
+          priceBg: "linear-gradient(180deg,#ffd400,#ffb300)",
+          priceTxt: "#c40000",
+          catBg: "#1565d8",
+          offBg: "#e63946",
+          footTxt: "#fff"
+        },
+        vermelho: {
+          label: "Impacto",
+          sw: "linear-gradient(135deg,#e01414,#111)",
+          bg: "linear-gradient(180deg,#141414 0%,#141414 24%, #d31111 24%, #a30909 100%)",
+          headTxt: "#fff",
+          t1: "#ffd400",
+          t2bg: "#e01414",
+          t2txt: "#fff",
+          badgeBg: "#ffd400",
+          badgeTxt: "#7a0000",
+          validBg: "#ffd400",
+          validTxt: "#7a0000",
+          priceBg: "#1b1b1b",
+          priceTxt: "#ffd400",
+          catBg: "#d31111",
+          offBg: "#ff9500",
+          footTxt: "#ffe9a8"
+        },
+        verde: {
+          label: "Natural",
+          sw: "linear-gradient(135deg,#2f9e44,#dff3d8)",
+          bg: "linear-gradient(160deg,#eaf6e2 0%,#d3ecc4 60%,#bfe3ab 100%)",
+          headTxt: "#14481d",
+          t1: "#e8590c",
+          t2bg: "#2f9e44",
+          t2txt: "#fff",
+          badgeBg: "#e8590c",
+          badgeTxt: "#fff",
+          validBg: "#2f9e44",
+          validTxt: "#fff",
+          priceBg: "linear-gradient(180deg,#2f9e44,#237032)",
+          priceTxt: "#fff",
+          catBg: "#2f9e44",
+          offBg: "#e8590c",
+          footTxt: "#14481d"
+        },
+      };
+      const FMTS = {
+        feed: {
+          label: "Instagram Feed",
+          dim: "1080 × 1080",
+          w: 1080,
+          h: 1080,
+          cols: 2
+        },
+        story: {
+          label: "Instagram Status",
+          dim: "1080 × 1920",
+          w: 1080,
+          h: 1920,
+          cols: 2
+        },
+        wfoto: {
+          label: "WhatsApp Foto",
+          dim: "1200 × 1200",
+          w: 1200,
+          h: 1200,
+          cols: 2
+        },
+        wstatus: {
+          label: "WhatsApp Status",
+          dim: "1080 × 1920",
+          w: 1080,
+          h: 1920,
+          cols: 2
+        },
+        auto: {
+          label: "Encarte Completo",
+          dim: "1080 × automático ↕",
+          w: 1080,
+          h: 0,
+          cols: 3
+        },
+      };
+
+      /* ---------- pickers ---------- */
+      function buildPickers() {
+        $("tplPick").innerHTML = Object.entries(TPLS).map(([k, t]) =>
+          `<div class="tpl ${k===tpl?'on':''}" onclick="tpl='${k}';buildPickers();render()"><div class="sw" style="background:${t.sw}"></div>${t.label}</div>`).join("");
+        $("fmtPick").innerHTML = Object.entries(FMTS).map(([k, f]) =>
+          `<div class="fmt ${k===fmt?'on':''}" onclick="fmt='${k}';buildPickers();render()">${f.label}<small>${f.dim}</small></div>`).join("");
+      }
+
+      function tg(h) {
+        h.parentElement.classList.toggle("closed")
+      }
+
+      /* ---------- products ---------- */
+      let editIdx = null;
+
+      function addProd() {
+        const name = $("pName").value.trim();
+        const price = parseFloat($("pPrice").value);
+        if (!name || isNaN(price)) {
+          alert("Preencha pelo menos o nome e o preço promocional.");
+          return
+        }
+        const obj = {
+          name,
+          img: $("pImg").value.trim(),
+          price,
+          old: parseFloat($("pOld").value) || null,
+          unit: $("pUnit").value,
+          cat: $("pCat").value
+        };
+        if (editIdx !== null) {
+          products[editIdx] = obj;
+          cancelEdit()
+        } else products.push(obj);
+        $("pName").value = $("pImg").value = $("pPrice").value = $("pOld").value = "";
+        renderList();
+        render();
+      }
+
+      function editProd(i) {
+        const p = products[i];
+        editIdx = i;
+        $("pName").value = p.name;
+        $("pImg").value = p.img;
+        $("pPrice").value = p.price;
+        $("pOld").value = p.old || "";
+        $("pUnit").value = p.unit;
+        $("pCat").value = p.cat;
+        $("btnAdd").textContent = "💾 Salvar alterações";
+        $("btnAdd").style.background = "#f0a020";
+        $("btnCancel").style.display = "block";
+        renderList();
+        $("pName").scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+        $("pName").focus();
+      }
+
+      function cancelEdit() {
+        editIdx = null;
+        $("pName").value = $("pImg").value = $("pPrice").value = $("pOld").value = "";
+        $("btnAdd").textContent = "+ Adicionar produto";
+        $("btnAdd").style.background = "var(--ok)";
+        $("btnCancel").style.display = "none";
+        renderList();
+      }
+
+      function delProd(i) {
+        if (editIdx === i) cancelEdit();
+        products.splice(i, 1);
+        renderList();
+        render()
+      }
+
+      function mv(i, d) {
+        const j = i + d;
+        if (j < 0 || j >= products.length) return;
+        [products[i], products[j]] = [products[j], products[i]];
+        renderList();
+        render()
+      }
+
+      function renderList() {
+        $("plist").innerHTML = products.map((p, i) => `
+   <div class="pitem" style="${i===editIdx?'border-color:#f0a020':''}">
+     ${p.img?`<img src="${p.img}" onerror="this.style.display='none'">`:`<div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px">📦</div>`}
+     <div class="pinfo"><b>${esc(p.name)}</b><span>R$ ${fmtP(p.price)} / ${p.unit} • ${p.cat}</span></div>
+     <div class="acts">
+       <button onclick="editProd(${i})" title="Editar" style="color:#ffd21e">✎</button>
+       <button onclick="mv(${i},-1)" title="Subir">↑</button>
+       <button onclick="mv(${i},1)" title="Descer">↓</button>
+       <button class="del" onclick="delProd(${i})" title="Remover">✕</button>
+     </div>
+   </div>`).join("") || `<div style="color:var(--mut);font-size:13px;text-align:center;padding:8px">Nenhum produto adicionado.</div>`;
+      }
+      const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      const fmtP = v => v.toFixed(2).replace(".", ",");
+
+      /* ---------- poster render ---------- */
+      function render() {
+        const t = TPLS[tpl],
+          f = FMTS[fmt];
+        const P = $("poster");
+        const isAuto = f.h === 0;
+        P.style.width = f.w + "px";
+        P.style.height = isAuto ? "auto" : f.h + "px";
+        P.style.minHeight = isAuto ? f.w + "px" : "";
+        P.style.background = t.bg;
+        P.style.fontFamily = $("tFont").value;
+        const useC = $("useColors").checked;
+        $("colorBox").style.display = useC ? "block" : "none";
+        const colT1 = useC ? $("cT1").value : t.t1;
+        const colHead = useC ? $("cHead").value : t.headTxt;
+        const colPname = useC ? $("cPname").value : "#222";
+        const colPrice = useC ? $("cPrice").value : t.priceTxt;
+        const szT = $("szTitle").value,
+          szN = $("szPname").value,
+          szP = $("szPrice").value;
+        const story = !isAuto && f.h > f.w;
+        const cols = isAuto ? (products.length >= 3 ? 3 : Math.max(products.length, 1)) : (story ? 2 : (products.length <= 2 ? products.length || 1 : products.length <= 4 ? 2 : 3));
+        const logo = $("mLogo").value.trim();
+        const type = $("cType").value;
+        const cards = products.map(p => {
+          const off = (p.old && p.old > p.price) ? Math.round((1 - p.price / p.old) * 100) : 0;
+          const [ip, dp] = fmtP(p.price).split(",");
+          return `<div class="p-card">
+      ${$("showCat").checked?`<div class="p-cat" style="background:${t.catBg}">${esc(p.cat)}</div>`:""}
+      ${$("showOff").checked&&off>0?`<div class="p-off" style="background:${t.offBg}">-${off}%</div>`:""}
+      <div class="p-img">${p.img?`<img src="${p.img}" crossorigin="anonymous" onerror="this.outerHTML='<div class=noimg>🛍️</div>'">`:`<div class="noimg">🛍️</div>`}</div>
+      <div class="p-pname" style="font-size:${szN}px;color:${colPname}">${esc(p.name)}</div>
+      ${$("showOld").checked&&p.old?`<div class="p-old">de R$ ${fmtP(p.old)}</div>`:""}
+      <div class="p-price" style="background:${t.priceBg};color:${colPrice}">
+        <span class="rs">R$</span><span class="int" style="font-size:${szP}px">${ip}</span><span class="dec" style="font-size:${Math.round(szP*.5)}px">,${dp}</span><span class="un">/ ${esc(p.unit)}</span>
+      </div>
+    </div>`;
+        }).join("") || `<div class="p-empty" style="color:${t.headTxt}">Adicione produtos no painel ao lado 👈</div>`;
+
+        P.innerHTML = `
+   <div class="p-head" style="color:${colHead}">
+     <div class="p-brand">
+       <div class="p-logo">${logo?`<img src="${logo}" crossorigin="anonymous" onerror="this.outerHTML='🛒'">`:"🛒"}</div>
+       <div>
+         <div class="p-name">${esc($("mName").value)}</div>
+         ${$("showSlogan").checked&&$("mSlogan").value?`<div class="p-slogan">${esc($("mSlogan").value)}</div>`:""}
+       </div>
+     </div>
+     <div class="p-title">
+       <div class="t1" style="color:${colT1};font-size:${szT}px">${esc($("cTitle").value)}</div>
+       ${$("cSub").value?`<div class="t2" style="background:${t.t2bg};color:${t.t2txt}">${esc($("cSub").value)}</div>`:""}
+     </div>
+     ${$("showType").checked&&type?`<div class="p-badges"><div class="p-badge" style="background:${t.badgeBg};color:${t.badgeTxt}">🔥 ${esc(type)}</div></div>`:""}
+     ${$("showValid").checked&&$("cValid").value?`<div class="p-valid" style="background:${t.validBg};color:${t.validTxt}">${esc($("cValid").value)}</div>`:""}
+   </div>
+   <div class="p-grid" style="grid-template-columns:repeat(${cols},1fr);align-content:${story?'center':'start'};${story&&products.length<=4?'padding-left:90px;padding-right:90px;gap:26px':''}">${cards}</div>
+   ${$("showFoot").checked&&$("mFoot").value?`<div class="p-foot" style="color:${t.footTxt}"><div class="f1">${esc($("mFoot").value)}</div><div class="f2">Ofertas válidas enquanto durar o estoque • Imagens meramente ilustrativas</div></div>`:""}`;
+        applyZoom();
+      }
+
+      function applyZoom() {
+        const z = $("zoom").value / 100,
+          f = FMTS[fmt];
+        $("zoomv").textContent = $("zoom").value + "%";
+        $("scale").style.transform = `scale(${z})`;
+        $("scale").style.width = f.w + "px";
+        const realH = f.h || $("poster").offsetHeight;
+        $("scale").parentElement.style.width = (f.w * z + 40) + "px";
+        $("scale").parentElement.style.height = (realH * z + 40) + "px";
+      }
+      /* ---------- download ---------- */
+      async function download() {
+        const btn = document.querySelector(".btn-dl");
+        btn.textContent = "⏳ Gerando...";
+        const f = FMTS[fmt];
+        const isAuto = f.h === 0;
+        // clona o encarte para fora da tela, SEM o zoom/transform do preview
+        const box = document.createElement("div");
+        box.style.cssText = `position:fixed;left:0;top:0;width:${f.w}px;transform:none;z-index:-1;opacity:0;pointer-events:none;overflow:hidden`;
+        const clone = $("poster").cloneNode(true);
+        clone.id = "posterExport";
+        clone.style.width = f.w + "px";
+        clone.style.height = isAuto ? "auto" : f.h + "px";
+        clone.style.transform = "none";
+        box.appendChild(clone);
+        document.body.appendChild(box);
+        // aguarda as imagens do clone carregarem
+        await Promise.all([...clone.querySelectorAll("img")].map(im => im.complete ? 1 : new Promise(r => {
+          im.onload = im.onerror = r
+        })));
+        const outH = isAuto ? clone.offsetHeight : f.h;
+        box.style.height = outH + "px";
+        try {
+          const canvas = await html2canvas(clone, {
+            width: f.w,
+            height: outH,
+            windowWidth: f.w,
+            windowHeight: outH,
+            scale: 1,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            logging: false
+          });
+          const a = document.createElement("a");
+          a.download = `encarte-${fmt}-${Date.now()}.png`;
+          a.href = canvas.toDataURL("image/png");
+          a.click();
+        } catch (e) {
+          alert("Não foi possível gerar a imagem. Se usou imagens externas, o site delas pode bloquear o download — tente hospedar em outro serviço (ex.: imgur, postimages).")
+        }
+        box.remove();
+        btn.textContent = "⬇️ Baixar imagem (PNG)";
+      }
+      /* ---------- projeto: salvar / importar ---------- */
+      const FIELDS = ["mName", "mSlogan", "mLogo", "mFoot", "cTitle", "cSub", "cType", "cValid",
+        "tFont", "szTitle", "szPname", "szPrice", "cT1", "cHead", "cPname", "cPrice"
+      ];
+      const CHECKS = ["showSlogan", "showType", "showCat", "showValid", "showOld", "showOff", "showFoot", "useColors"];
+
+      function saveProject() {
+        const data = {
+          app: "gerador-encartes",
+          versao: 1,
+          salvoEm: new Date().toISOString(),
+          tpl,
+          fmt,
+          products,
+          campos: Object.fromEntries(FIELDS.map(id => [id, $(id).value])),
+          opcoes: Object.fromEntries(CHECKS.map(id => [id, $(id).checked]))
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json"
+        });
+        const a = document.createElement("a");
+        a.download = `projeto-encarte-${new Date().toISOString().slice(0,10)}.json`;
+        a.href = URL.createObjectURL(blob);
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function importProject(inp) {
+        const file = inp.files[0];
+        if (!file) return;
+        const rd = new FileReader();
+        rd.onload = () => {
+          try {
+            const d = JSON.parse(rd.result);
+            if (d.app !== "gerador-encartes" || !Array.isArray(d.products)) throw 0;
+            products = d.products;
+            if (TPLS[d.tpl]) tpl = d.tpl;
+            if (FMTS[d.fmt]) fmt = d.fmt;
+            FIELDS.forEach(id => {
+              if (d.campos && d.campos[id] !== undefined) $(id).value = d.campos[id]
+            });
+            CHECKS.forEach(id => {
+              if (d.opcoes && d.opcoes[id] !== undefined) $(id).checked = d.opcoes[id]
+            });
+            $("vT1").textContent = $("szTitle").value;
+            $("vT2").textContent = $("szPname").value;
+            $("vT3").textContent = $("szPrice").value;
+            cancelEdit();
+            buildPickers();
+            renderList();
+            render();
+            alert(`Projeto importado! ${products.length} produto(s) carregado(s).`);
+          } catch (e) {
+            alert("Arquivo inválido. Selecione um projeto salvo por este sistema (.json).")
+          }
+        };
+        rd.readAsText(file);
+        inp.value = "";
+      }
+      /* ---------- init ---------- */
+      buildPickers();
+      renderList();
+      render();
+    </script>
+
+  </body>
+
+</html>
