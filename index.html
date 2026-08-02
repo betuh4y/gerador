@@ -1,1224 +1,1211 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Encartes — Mercadinho</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-      :root {
-        --bg: #111418;
-        --panel: #1b2027;
-        --panel2: #232a33;
-        --line: #313a45;
-        --txt: #e8edf2;
-        --mut: #9aa7b4;
-        --accent: #ffd21e;
-        --accent2: #e63946;
-        --ok: #37c871;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0
-      }
-
-      body {
-        font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--txt);
-        min-height: 100vh
-      }
-
-      header.app {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        background: linear-gradient(90deg, #e63946, #b5121f);
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, .4)
-      }
-
-      header.app .cart {
-        font-size: 26px
-      }
-
-      header.app h1 {
-        font-size: 19px;
-        letter-spacing: .5px
-      }
-
-      header.app small {
-        opacity: .85;
-        display: block;
-        font-weight: 400
-      }
-
-      .layout {
-        display: grid;
-        grid-template-columns: 400px 1fr;
-        gap: 0;
-        min-height: calc(100vh - 60px)
-      }
-
-      @media(max-width:960px) {
-        .layout {
-          grid-template-columns: 1fr
-        }
-      }
-
-      /* ------- sidebar ------- */
-      aside {
-        background: var(--panel);
-        border-right: 1px solid var(--line);
-        padding: 16px;
-        overflow-y: auto;
-        max-height: calc(100vh - 60px)
-      }
-
-      @media(max-width:960px) {
-        aside {
-          max-height: none;
-          border-right: none;
-          border-bottom: 1px solid var(--line)
-        }
-      }
-
-      .sec {
-        background: var(--panel2);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        margin-bottom: 14px;
-        overflow: hidden
-      }
-
-      .sec>h2 {
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 11px 14px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        user-select: none;
-        color: var(--accent)
-      }
-
-      .sec>h2::after {
-        content: "▾";
-        transition: .2s;
-        color: var(--mut)
-      }
-
-      .sec.closed>h2::after {
-        transform: rotate(-90deg)
-      }
-
-      .sec .body {
-        padding: 0 14px 14px
-      }
-
-      .sec.closed .body {
-        display: none
-      }
-
-      label.f {
-        display: block;
-        font-size: 12px;
-        color: var(--mut);
-        margin: 10px 0 4px
-      }
-
-      input[type=text],
-      input[type=url],
-      input[type=number],
-      select,
-      textarea {
-        width: 100%;
-        background: #12161c;
-        border: 1px solid var(--line);
-        color: var(--txt);
-        border-radius: 7px;
-        padding: 9px 10px;
-        font-size: 14px;
-        outline: none
-      }
-
-      input:focus,
-      select:focus {
-        border-color: var(--accent)
-      }
-
-      .row {
-        display: flex;
-        gap: 8px
-      }
-
-      .row>* {
-        flex: 1
-      }
-
-      .chk {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        margin: 8px 0;
-        cursor: pointer
-      }
-
-      .chk input {
-        accent-color: var(--accent);
-        width: 16px;
-        height: 16px
-      }
-
-      button {
-        cursor: pointer;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px
-      }
-
-      .btn-add {
-        width: 100%;
-        padding: 11px;
-        background: var(--ok);
-        color: #08240f;
-        margin-top: 12px
-      }
-
-      .btn-add:hover {
-        filter: brightness(1.1)
-      }
-
-      .btn-dl {
-        padding: 12px 18px;
-        background: var(--accent);
-        color: #221a00
-      }
-
-      .btn-dl:hover {
-        filter: brightness(1.08)
-      }
-
-      .prodlist {
-        margin-top: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px
-      }
-
-      .pitem {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        background: #12161c;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 8px
-      }
-
-      .pitem img {
-        width: 42px;
-        height: 42px;
-        object-fit: contain;
-        background: #fff;
-        border-radius: 6px
-      }
-
-      .pitem .pinfo {
-        flex: 1;
-        min-width: 0
-      }
-
-      .pitem .pinfo b {
-        font-size: 13px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis
-      }
-
-      .pitem .pinfo span {
-        font-size: 12px;
-        color: var(--mut)
-      }
-
-      .pitem .acts {
-        display: flex;
-        gap: 4px
-      }
-
-      .pitem .acts button {
-        background: var(--panel2);
-        color: var(--txt);
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        font-size: 13px
-      }
-
-      .pitem .acts button.del {
-        color: #ff7b7b
-      }
-
-      .tplpick {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-top: 6px
-      }
-
-      .tpl {
-        border: 2px solid var(--line);
-        border-radius: 8px;
-        padding: 8px 6px;
-        text-align: center;
-        cursor: pointer;
-        font-size: 12px
-      }
-
-      .tpl .sw {
-        height: 34px;
-        border-radius: 5px;
-        margin-bottom: 6px
-      }
-
-      .tpl.on {
-        border-color: var(--accent);
-        background: #2a2410
-      }
-
-      .fmtpick {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        margin-top: 6px
-      }
-
-      .fmt {
-        border: 2px solid var(--line);
-        border-radius: 8px;
-        padding: 9px;
-        cursor: pointer;
-        font-size: 12px;
-        text-align: center
-      }
-
-      .fmt small {
-        display: block;
-        color: var(--mut);
-        margin-top: 2px
-      }
-
-      .fmt.on {
-        border-color: var(--accent);
-        background: #2a2410
-      }
-
-      /* ------- preview ------- */
-      main {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        overflow: auto
-      }
-
-      .toolbar {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        justify-content: center
-      }
-
-      .zoombox {
-        color: var(--mut);
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 6px
-      }
-
-      #stageWrap {
-        background: #0b0d10;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 20px;
-        max-width: 100%;
-        overflow: auto
-      }
-
-      #scale {
-        transform-origin: top left
-      }
-
-      /* ================= POSTER ================= */
-      #poster {
-        position: relative;
-        overflow: hidden;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        display: flex;
-        flex-direction: column
-      }
-
-      #poster * {
-        box-sizing: border-box
-      }
-
-      .p-head {
-        padding: 26px 34px 18px;
-        position: relative;
-        flex: 0 0 auto
-      }
-
-      .p-brand {
-        display: flex;
-        align-items: center;
-        gap: 16px
-      }
-
-      .p-logo {
-        width: 74px;
-        height: 74px;
-        border-radius: 16px;
-        background: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 38px;
-        flex-shrink: 0;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
-        overflow: hidden
-      }
-
-      .p-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover
-      }
-
-      .p-name {
-        font-size: 44px;
-        font-weight: 900;
-        line-height: 1.05;
-        text-transform: uppercase;
-        text-shadow: 2px 3px 0 rgba(0, 0, 0, .35)
-      }
-
-      .p-slogan {
-        font-size: 17px;
-        font-weight: 600;
-        opacity: .92;
-        margin-top: 4px
-      }
-
-      .p-title {
-        margin-top: 18px;
-        text-align: center
-      }
-
-      .p-title .t1 {
-        font-size: 62px;
-        font-weight: 900;
-        line-height: 1.02;
-        text-transform: uppercase;
-        text-shadow: 3px 4px 0 rgba(0, 0, 0, .4)
-      }
-
-      .p-title .t2 {
-        display: inline-block;
-        margin-top: 12px;
-        padding: 8px 26px;
-        font-size: 22px;
-        font-weight: 800;
-        text-transform: uppercase;
-        border-radius: 8px
-      }
-
-      .p-badges {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 12px;
-        flex-wrap: wrap
-      }
-
-      .p-badge {
-        padding: 6px 16px;
-        border-radius: 999px;
-        font-size: 15px;
-        font-weight: 800;
-        text-transform: uppercase
-      }
-
-      .p-valid {
-        text-align: center;
-        font-size: 15px;
-        font-weight: 700;
-        padding: 8px;
-        margin-top: 14px;
-        text-transform: uppercase;
-        letter-spacing: .5px
-      }
-
-      .p-grid {
-        flex: 1;
-        display: grid;
-        gap: 16px;
-        padding: 20px 30px;
-        align-content: start
-      }
-
-      .p-card {
-        background: #fff;
-        border-radius: 16px;
-        padding: 14px 12px 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        color: #222;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, .25)
-      }
-
-      .p-cat {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        padding: 3px 9px;
-        border-radius: 999px;
-        color: #fff
-      }
-
-      .p-off {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: 900;
-        color: #fff;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, .3)
-      }
-
-      .p-img {
-        width: 100%;
-        height: 130px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 14px
-      }
-
-      .p-img img {
-        max-width: 88%;
-        max-height: 100%;
-        object-fit: contain
-      }
-
-      .p-img .noimg {
-        font-size: 52px;
-        opacity: .25
-      }
-
-      .p-pname {
-        font-size: 17px;
-        font-weight: 800;
-        line-height: 1.15;
-        margin-top: 8px;
-        min-height: 38px;
-        display: flex;
-        align-items: center
-      }
-
-      .p-old {
-        font-size: 14px;
-        color: #888;
-        text-decoration: line-through;
-        font-weight: 600;
-        margin-top: 2px
-      }
-
-      .p-price {
-        width: calc(100% + 24px);
-        margin: 8px -12px 0;
-        padding: 8px 6px 10px;
-        color: #fff;
-        display: flex;
-        align-items: baseline;
-        justify-content: center;
-        gap: 3px
-      }
-
-      .p-price .rs {
-        font-size: 16px;
-        font-weight: 800
-      }
-
-      .p-price .int {
-        font-size: 40px;
-        font-weight: 900;
-        line-height: 1
-      }
-
-      .p-price .dec {
-        font-size: 20px;
-        font-weight: 900
-      }
-
-      .p-price .un {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        opacity: .9;
-        margin-left: 4px;
-        align-self: flex-end
-      }
-
-      .p-foot {
-        flex: 0 0 auto;
-        padding: 16px 30px 24px;
-        text-align: center
-      }
-
-      .p-foot .f1 {
-        font-size: 19px;
-        font-weight: 800
-      }
-
-      .p-foot .f2 {
-        font-size: 15px;
-        opacity: .9;
-        margin-top: 3px
-      }
-
-      .p-empty {
-        grid-column: 1/-1;
-        text-align: center;
-        padding: 50px 20px;
-        font-size: 20px;
-        opacity: .7;
-        font-weight: 600
-      }
-    </style>
-    <script type="text/javascript" src="./index.js" defer=""></script>
-    <link rel="stylesheet" href="./index.css">
-  </head>
-
-  <body>
-
-    <header class="app">
-      <div class="cart">🛒</div>
-      <div>
-        <h1>Gerador de Encartes <small>Crie posts de ofertas para Instagram e WhatsApp</small></h1>
-      </div>
-    </header>
-
-    <div class="layout">
-      <aside>
-
-        <!-- MERCADO -->
-        <div class="sec">
-          <h2 onclick="tg(this)">🏪 Dados do mercado</h2>
-          <div class="body">
-            <label class="f">Nome do mercado</label>
-            <input type="text" id="mName" value="Mercadinho Bom Preço" oninput="render()">
-            <label class="f">Slogan (opcional)</label>
-            <input type="text" id="mSlogan" value="Aqui o preço é baixo de verdade!" oninput="render()">
-            <label class="f">URL da logo (opcional — se vazio usa 🛒)</label>
-            <input type="url" id="mLogo" placeholder="https://exemplo.com/logo.png" oninput="render()">
-            <label class="f">Rodapé (endereço / telefone / WhatsApp)</label>
-            <input type="text" id="mFoot" value="📍 Rua das Flores, 123 • 📱 (81) 99999-0000" oninput="render()">
-          </div>
-        </div>
-
-        <!-- CAMPANHA -->
-        <div class="sec">
-          <h2 onclick="tg(this)">📣 Campanha</h2>
-          <div class="body">
-            <label class="f">Título da promoção</label>
-            <input type="text" id="cTitle" value="Semana de Ofertas" oninput="render()">
-            <label class="f">Subtítulo</label>
-            <input type="text" id="cSub" value="Os melhores produtos com os melhores preços" oninput="render()">
-            <label class="f">Tipo de promoção</label>
-            <select id="cType" onchange="render()">
-              <option>Oferta da Semana</option>
-              <option>Oferta Relâmpago</option>
-              <option>Super Ofertas</option>
-              <option>Queima de Estoque</option>
-              <option>Fim de Semana</option>
-              <option>Dia do Cliente</option>
-              <option value="">— nenhum —</option>
-            </select>
-            <label class="f">Validade</label>
-            <input type="text" id="cValid" value="Válido de 24/07 a 31/07 ou enquanto durar o estoque" oninput="render()">
-          </div>
-        </div>
-
-        <!-- MODELO / FORMATO -->
-        <div class="sec">
-          <h2 onclick="tg(this)">🎨 Modelo e formato</h2>
-          <div class="body">
-            <label class="f">Modelo visual</label>
-            <div class="tplpick" id="tplPick"></div>
-            <label class="f">Formato de publicação</label>
-            <div class="fmtpick" id="fmtPick"></div>
-          </div>
-        </div>
-
-        <!-- TEXTO -->
-        <div class="sec closed">
-          <h2 onclick="tg(this)">🔤 Fonte e cores do texto</h2>
-          <div class="body">
-            <label class="f">Fonte do encarte</label>
-            <select id="tFont" onchange="render()">
-              <option value="'Segoe UI',Arial,sans-serif">Padrão (Segoe UI)</option>
-              <option value="Arial,Helvetica,sans-serif">Arial</option>
-              <option value="'Arial Black',Arial,sans-serif">Arial Black (grossa)</option>
-              <option value="Impact,'Arial Black',sans-serif">Impact (encarte)</option>
-              <option value="Verdana,Geneva,sans-serif">Verdana</option>
-              <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
-              <option value="Georgia,'Times New Roman',serif">Georgia (serifada)</option>
-              <option value="'Courier New',monospace">Courier (máquina)</option>
-            </select>
-            <label class="f">Tamanho do título da promoção: <b id="vT1">62</b>px</label>
-            <input type="range" min="36" max="96" value="62" id="szTitle" oninput="$('vT1').textContent=this.value;render()">
-            <label class="f">Tamanho do nome do produto: <b id="vT2">17</b>px</label>
-            <input type="range" min="12" max="28" value="17" id="szPname" oninput="$('vT2').textContent=this.value;render()">
-            <label class="f">Tamanho do preço: <b id="vT3">40</b>px</label>
-            <input type="range" min="26" max="60" value="40" id="szPrice" oninput="$('vT3').textContent=this.value;render()">
-            <label class="chk"><input type="checkbox" id="useColors" onchange="render()"> Personalizar cores do texto</label>
-            <div id="colorBox" style="display:none">
-              <div class="row">
-                <div><label class="f">Título</label><input type="color" id="cT1" value="#ffffff" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
-                <div><label class="f">Cabeçalho</label><input type="color" id="cHead" value="#ffffff" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
-              </div>
-              <div class="row">
-                <div><label class="f">Nome do produto</label><input type="color" id="cPname" value="#222222" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
-                <div><label class="f">Preço</label><input type="color" id="cPrice" value="#c40000" oninput="render()" style="width:100%;height:36px;padding:2px;background:#12161c;border:1px solid var(--line);border-radius:7px"></div>
-              </div>
-              <button class="btn-add" style="background:var(--panel);color:var(--txt);border:1px solid var(--line)" onclick="$('useColors').checked=false;render()">Voltar às cores do modelo</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ELEMENTOS -->
-        <div class="sec">
-          <h2 onclick="tg(this)">⚙️ Elementos do encarte</h2>
-          <div class="body">
-            <label class="chk"><input type="checkbox" id="showSlogan" checked="" onchange="render()"> Mostrar slogan</label>
-            <label class="chk"><input type="checkbox" id="showType" checked="" onchange="render()"> Mostrar tipo de promoção</label>
-            <label class="chk"><input type="checkbox" id="showCat" checked="" onchange="render()"> Mostrar categoria nos produtos</label>
-            <label class="chk"><input type="checkbox" id="showValid" checked="" onchange="render()"> Mostrar validade</label>
-            <label class="chk"><input type="checkbox" id="showOld" checked="" onchange="render()"> Mostrar preço antigo (riscado)</label>
-            <label class="chk"><input type="checkbox" id="showOff" checked="" onchange="render()"> Mostrar selo de desconto (%)</label>
-            <label class="chk"><input type="checkbox" id="showFoot" checked="" onchange="render()"> Mostrar rodapé</label>
-          </div>
-        </div>
-
-        <!-- PRODUTOS -->
-        <div class="sec">
-          <h2 onclick="tg(this)">📦 Adicionar produto</h2>
-          <div class="body">
-            <label class="f">Nome do produto</label>
-            <input type="text" id="pName" placeholder="Arroz Soltinho 5kg">
-            <label class="f">URL da imagem do produto</label>
-            <input type="url" id="pImg" placeholder="https://exemplo.com/arroz.png">
-            <div class="row">
-              <div>
-                <label class="f">Preço promocional (R$)</label>
-                <input type="number" id="pPrice" step="0.01" min="0" placeholder="15,99">
-              </div>
-              <div>
-                <label class="f">Preço antigo (opcional)</label>
-                <input type="number" id="pOld" step="0.01" min="0" placeholder="18,99">
-              </div>
-            </div>
-            <div class="row">
-              <div>
-                <label class="f">Vendido por</label>
-                <select id="pUnit">
-                  <option value="unidade">Unidade</option>
-                  <option value="caixa">Caixa</option>
-                  <option value="kg">Kg</option>
-                  <option value="pacote">Pacote</option>
-                  <option value="fardo">Fardo</option>
-                  <option value="dúzia">Dúzia</option>
-                </select>
-              </div>
-              <div>
-                <label class="f">Categoria</label>
-                <select id="pCat">
-                  <option>Mercearia</option>
-                  <option>Bebidas</option>
-                  <option>Hortifruti</option>
-                  <option>Açougue</option>
-                  <option>Frios e Laticínios</option>
-                  <option>Padaria</option>
-                  <option>Limpeza</option>
-                  <option>Higiene</option>
-                  <option>Pet</option>
-                  <option>Bazar</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn-add" id="btnAdd" onclick="addProd()">+ Adicionar produto</button>
-            <button class="btn-add" id="btnCancel" style="display:none;background:var(--panel);color:var(--txt);border:1px solid var(--line)" onclick="cancelEdit()">Cancelar edição</button>
-            <div class="prodlist" id="plist"></div>
-          </div>
-        </div>
-
-      </aside>
-
-      <main>
-        <div class="toolbar">
-          <button class="btn-dl" onclick="download()">⬇️ Baixar imagem (PNG)</button>
-          <button class="btn-dl" style="background:#37c871;color:#08240f" onclick="saveProject()">💾 Salvar projeto</button>
-          <button class="btn-dl" style="background:#4a90d9;color:#fff" onclick="$('fileImport').click()">📂 Importar projeto</button>
-          <input type="file" id="fileImport" accept=".json,application/json" style="display:none" onchange="importProject(this)">
-          <div class="zoombox">Zoom <input type="range" min="20" max="100" value="42" id="zoom" oninput="applyZoom()"> <span id="zoomv">42%</span></div>
-        </div>
-        <div id="stageWrap">
-          <div id="scale">
-            <div id="poster"></div>
-          </div>
-        </div>
-      </main>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Encartes — Mercadinho</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg:#0d1117;
+  --panel:#151b23;
+  --panel-2:#1c232d;
+  --panel-hover:#242c37;
+  --border:#262c36;
+  --border-strong:#30363d;
+  --text:#e6edf3;
+  --text-mut:#848d97;
+  --text-dim:#6e7681;
+  --accent:#2f81f7;
+  --accent-hover:#4493f8;
+  --accent-soft:rgba(47,129,247,.12);
+  --success:#238636;
+  --danger:#da3633;
+  --warn:#d29922;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 4px 12px rgba(0,0,0,.3);
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+
+/* ---------- header ---------- */
+header.app{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:12px 24px;background:var(--panel);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;height:56px;
+}
+header.app .brand{display:flex;align-items:center;gap:10px}
+header.app .brand-icon{
+  width:30px;height:30px;border-radius:7px;
+  background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+}
+header.app h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+header.app .sub{font-size:12px;color:var(--text-mut);font-weight:400;margin-left:6px}
+@media(max-width:640px){header.app .sub{display:none}}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 56px)}
+@media(max-width:960px){.layout{grid-template-columns:1fr}}
+
+/* ---------- sidebar ---------- */
+aside{
+  background:var(--panel);border-right:1px solid var(--border);
+  padding:16px;overflow-y:auto;max-height:calc(100vh - 56px);
+}
+aside::-webkit-scrollbar{width:8px}
+aside::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
+aside::-webkit-scrollbar-track{background:transparent}
+
+.sec{
+  background:var(--panel-2);border:1px solid var(--border);
+  border-radius:var(--r);margin-bottom:10px;overflow:hidden;
+  transition:border-color .15s;
+}
+.sec:hover{border-color:var(--border-strong)}
+.sec>h2{
+  font-size:13px;font-weight:600;padding:12px 14px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;user-select:none;color:var(--text);
+  transition:background .15s;
+}
+.sec>h2:hover{background:var(--panel-hover)}
+.sec>h2 .ico{color:var(--text-mut);flex-shrink:0}
+.sec>h2 .chev{margin-left:auto;color:var(--text-dim);transition:transform .2s;flex-shrink:0}
+.sec.closed>h2 .chev{transform:rotate(-90deg)}
+.sec .body{padding:4px 14px 16px}
+.sec.closed .body{display:none}
+
+/* ---------- inputs ---------- */
+label.f{
+  display:block;font-size:12px;color:var(--text-mut);
+  margin:12px 0 5px;font-weight:500;
+}
+label.f b{color:var(--text);font-weight:600}
+input[type=text],input[type=url],input[type=number],select,textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:8px 10px;font-size:13px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);
+}
+input[type=color]{
+  width:100%;height:34px;padding:2px;background:var(--bg);
+  border:1px solid var(--border);border-radius:6px;cursor:pointer;
+}
+input[type=range]{
+  width:100%;accent-color:var(--accent);
+  height:20px;background:transparent;
+}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23848d97' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+optgroup{font-weight:600;color:var(--accent);background:var(--bg)}
+option{color:var(--text);background:var(--bg);font-weight:400}
+.row{display:flex;gap:8px}.row>*{flex:1}
+
+/* ---------- checkbox ---------- */
+.chk{
+  display:flex;align-items:center;gap:9px;font-size:13px;
+  margin:8px 0;cursor:pointer;color:var(--text);
+  padding:2px 0;
+}
+.chk input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+.chk:hover{color:var(--accent)}
+
+/* ---------- buttons ---------- */
+button{cursor:pointer;border:none;border-radius:6px;font-weight:500;font-size:13px;font-family:inherit;transition:all .15s}
+.btn-primary{
+  width:100%;padding:9px 14px;background:var(--accent);color:#fff;
+  margin-top:12px;font-weight:600;
+  box-shadow:var(--shadow-sm);
+}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-add{ /* legacy alias, mantido para o JS */
+  width:100%;padding:9px 14px;background:var(--accent);color:#fff;
+  margin-top:12px;font-weight:600;
+}
+.btn-add:hover{background:var(--accent-hover)}
+.btn-secondary{
+  padding:9px 14px;background:transparent;color:var(--text);
+  border:1px solid var(--border-strong);
+}
+.btn-secondary:hover{background:var(--panel-hover);border-color:var(--text-dim)}
+.btn-ghost{
+  background:transparent;color:var(--text-mut);
+  padding:6px 10px;border:1px solid var(--border);
+  font-size:12px;
+}
+.btn-ghost:hover{color:var(--text);border-color:var(--border-strong)}
+.btn-dl{
+  padding:10px 18px;background:var(--accent);color:#fff;
+  font-weight:600;box-shadow:var(--shadow-sm);
+}
+.btn-dl:hover{background:var(--accent-hover)}
+.btn-proj{
+  padding:10px 18px;background:transparent;color:var(--text);
+  border:1px solid var(--border-strong);font-weight:500;
+}
+.btn-proj:hover{background:var(--panel-hover);border-color:var(--text-dim)}
+
+/* ---------- product list ---------- */
+.prodlist{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.pitem{
+  display:flex;gap:10px;align-items:center;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;padding:8px;transition:border-color .15s;
+}
+.pitem:hover{border-color:var(--border-strong)}
+.pitem img{width:36px;height:36px;object-fit:contain;background:#fff;border-radius:5px}
+.pitem .pinfo{flex:1;min-width:0}
+.pitem .pinfo b{font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.pitem .pinfo span{font-size:11px;color:var(--text-mut)}
+.pitem .acts{display:flex;gap:2px}
+.pitem .acts button{
+  background:transparent;color:var(--text-mut);
+  width:26px;height:26px;border-radius:5px;font-size:13px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.pitem .acts button:hover{background:var(--panel-hover);color:var(--text)}
+.pitem .acts button.del:hover{color:var(--danger)}
+
+/* ---------- theme / format pickers ---------- */
+.tplpick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.tpl{
+  border:1px solid var(--border);border-radius:6px;
+  padding:6px 5px;text-align:center;cursor:pointer;
+  font-size:11px;font-weight:500;line-height:1.2;
+  color:var(--text);background:var(--bg);transition:all .15s;
+}
+.tpl:hover{border-color:var(--border-strong)}
+.tpl .sw{height:26px;border-radius:4px;margin-bottom:4px}
+.tpl.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+.fmtpick{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:6px}
+.fmt{
+  border:1px solid var(--border);border-radius:6px;
+  padding:9px 8px;cursor:pointer;font-size:12px;
+  text-align:center;color:var(--text);background:var(--bg);
+  font-weight:500;transition:all .15s;
+}
+.fmt:hover{border-color:var(--border-strong)}
+.fmt small{display:block;color:var(--text-mut);margin-top:2px;font-weight:400}
+.fmt.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.fmt.on small{color:var(--accent)}
+
+/* ---------- preview area ---------- */
+main{padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;overflow:auto;background:var(--bg)}
+.toolbar{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  justify-content:center;width:100%;max-width:600px;
+}
+.zoombox{
+  color:var(--text-mut);font-size:12px;
+  display:flex;align-items:center;gap:8px;
+  padding:6px 12px;background:var(--panel);
+  border:1px solid var(--border);border-radius:6px;
+}
+.zoombox input{width:100px}
+.zoombox b{color:var(--text);font-weight:500;min-width:32px;display:inline-block}
+#stageWrap{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:20px;max-width:100%;overflow:auto;
+  box-shadow:var(--shadow-md);
+}
+#scale{transform-origin:top left}
+
+/* ---------- quick emoji buttons ---------- */
+.emoji-quick{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.emoji-quick button{
+  padding:5px 9px;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);font-size:15px;border-radius:5px;
+}
+.emoji-quick button:hover{border-color:var(--accent)}
+
+/* ---------- help text ---------- */
+.help{font-size:11px;color:var(--text-dim);margin-top:8px;line-height:1.5}
+.help b{color:var(--text-mut);font-weight:600}
+
+/* ---------- image tools ---------- */
+.img-tools{display:flex;gap:6px;margin-top:6px}
+.img-tools button{flex:1;padding:8px 6px;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.img-preview{
+  margin-top:10px;padding:8px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  display:flex;align-items:center;gap:10px;
+}
+.img-preview img{width:56px;height:56px;object-fit:contain;background:#fff;border-radius:5px;padding:3px}
+.img-preview .info{flex:1;font-size:12px;color:var(--text-mut)}
+.img-preview .info b{color:var(--text);display:block;margin-bottom:2px}
+.img-preview button{
+  background:transparent;color:var(--text-mut);
+  padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;
+}
+.img-preview button:hover{color:var(--danger);border-color:var(--danger)}
+
+/* ---------- mobile ---------- */
+#tabbar{display:none}
+@media(max-width:960px){
+  header.app{padding:10px 14px;height:52px}
+  header.app h1{font-size:14px}
+  .layout{grid-template-columns:1fr;min-height:auto;padding-bottom:60px}
+  aside{max-height:none;border-right:none;padding:14px 12px 24px}
+  main{padding:12px 12px 24px}
+  #stageWrap{padding:12px;border-radius:6px}
+  body.m-preview aside{display:none}
+  body.m-edit main{display:none}
+  #tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:100;
+    background:var(--panel);border-top:1px solid var(--border);
+    height:56px;box-shadow:0 -2px 8px rgba(0,0,0,.3);
+  }
+  #tabbar button{
+    flex:1;background:none;color:var(--text-mut);font-size:12px;font-weight:500;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;border-radius:0;padding:8px;
+  }
+  #tabbar button.on{color:var(--accent);background:var(--accent-soft)}
+  input[type=text],input[type=url],input[type=number],select{font-size:16px;padding:10px}
+  input[type=range]{height:32px}
+  input[type=range]::-webkit-slider-thumb{width:24px;height:24px}
+  .btn-primary,.btn-add{padding:12px;font-size:14px}
+  .btn-dl,.btn-proj{padding:12px 16px;font-size:14px;flex:1}
+  .toolbar{width:100%}
+  .zoombox{display:none}
+  .pitem .acts button{width:32px;height:32px;font-size:14px}
+  .chk{padding:4px 0;font-size:14px}
+}
+
+/* ================= POSTER (não mexer) ================= */
+#poster{position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;display:flex;flex-direction:column}
+#poster *{box-sizing:border-box}
+.p-head{padding:26px 34px 18px;position:relative;flex:0 0 auto}
+.p-brand{display:flex;align-items:center;gap:16px}
+.p-logo{width:74px;height:74px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.3);overflow:hidden}
+.p-logo img{width:100%;height:100%;object-fit:cover}
+.p-name{font-size:44px;font-weight:900;line-height:1.05;text-transform:uppercase;text-shadow:2px 3px 0 rgba(0,0,0,.35)}
+.p-slogan{font-size:17px;font-weight:600;opacity:.92;margin-top:4px}
+.p-title{margin-top:18px;text-align:center}
+.p-title .t1{font-size:62px;font-weight:900;line-height:1.02;text-transform:uppercase;text-shadow:3px 4px 0 rgba(0,0,0,.4)}
+.p-title .t2{display:inline-block;margin-top:12px;padding:8px 26px;font-size:22px;font-weight:800;text-transform:uppercase;border-radius:8px}
+.p-badges{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.p-badge{padding:6px 16px;border-radius:999px;font-size:15px;font-weight:800;text-transform:uppercase}
+.p-valid{text-align:center;font-size:15px;font-weight:700;padding:8px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
+.p-grid{flex:1;display:grid;gap:16px;padding:20px 30px;align-content:start}
+.p-card{background:#fff;border-radius:16px;padding:14px 12px 0;display:flex;flex-direction:column;align-items:center;text-align:center;color:#222;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.p-cat{position:absolute;top:10px;left:10px;font-size:11px;font-weight:800;text-transform:uppercase;padding:3px 9px;border-radius:999px;color:#fff}
+.p-off{position:absolute;top:8px;right:8px;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.p-img{width:100%;height:130px;display:flex;align-items:center;justify-content:center;margin-top:14px}
+.p-img img{max-width:88%;max-height:100%;object-fit:contain}
+.p-img .noimg{font-size:52px;opacity:.25}
+.p-pname{font-size:17px;font-weight:800;line-height:1.15;margin-top:8px;min-height:38px;display:flex;align-items:center}
+.p-old{font-size:14px;color:#888;text-decoration:line-through;font-weight:600;margin-top:2px}
+.p-price{width:calc(100% + 24px);margin:8px -12px 0;padding:8px 6px 10px;color:#fff;display:flex;align-items:baseline;justify-content:center;gap:3px}
+.p-price .rs{font-size:16px;font-weight:800}
+.p-price .int{font-size:40px;font-weight:900;line-height:1}
+.p-price .dec{font-size:20px;font-weight:900}
+.p-price .un{font-size:12px;font-weight:700;text-transform:uppercase;opacity:.9;margin-left:4px;align-self:flex-end}
+.p-foot{flex:0 0 auto;padding:16px 30px 24px;text-align:center}
+.p-foot .f1{font-size:19px;font-weight:800}
+.p-foot .f2{font-size:15px;opacity:.9;margin-top:3px}
+.p-empty{grid-column:1/-1;text-align:center;padding:50px 20px;font-size:20px;opacity:.7;font-weight:600}
+.p-deco{position:absolute;font-size:64px;pointer-events:none;opacity:.85;line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));z-index:1}
+.p-deco.bl{bottom:18px;left:18px}
+.p-deco.br{bottom:18px;right:18px}
+.p-deco img.emoji{width:1em!important;height:1em!important;margin:0!important;vertical-align:middle}
+#poster img.emoji, #posterExport img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-.15em;display:inline-block}
+.p-pattern{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay}
+
+/* Remove fundo branco das fotos de produto (mix-blend-mode multiply) */
+#poster.no-bg .p-img img,
+#poster.no-bg .p-img-box img,
+#poster.no-bg .p-cloud img,
+#posterExport.no-bg .p-img img,
+#posterExport.no-bg .p-img-box img,
+#posterExport.no-bg .p-cloud img{mix-blend-mode:multiply}
+
+/* ================= LAYOUT VARIANTS ================= */
+/* --- TAG (estilo Cricaré / Atacadão) --- */
+.p-card.layout-tag{padding:8px 8px 0;border-radius:8px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.p-card.layout-tag .p-pname-top{font-size:12px;font-weight:700;color:#333;text-align:center;line-height:1.15;min-height:32px;display:flex;align-items:center;justify-content:center;padding:4px 4px 0}
+.p-card.layout-tag .p-img{height:110px;margin-top:2px}
+.p-card.layout-tag .p-tag{width:calc(100% + 16px);margin:6px -8px 0;padding:8px 4px;display:flex;align-items:baseline;justify-content:center;gap:2px;font-weight:900;position:relative}
+.p-card.layout-tag .p-tag .rs{font-size:14px;font-weight:900;align-self:flex-start;padding-top:8px}
+.p-card.layout-tag .p-tag .int{font-size:40px;font-weight:900;line-height:.95}
+.p-card.layout-tag .p-tag .dec{font-size:22px;font-weight:900}
+.p-card.layout-tag .p-tag .un{font-size:10px;font-weight:700;text-transform:uppercase;align-self:flex-end;margin-left:4px;opacity:.85}
+.p-card.layout-tag .p-tag-off{position:absolute;top:-8px;right:6px;background:#a91b1b;color:#fff;font-size:11px;padding:3px 8px;border-radius:999px;font-weight:800}
+
+/* --- FLOATING (estilo Iranda / Nestlé) --- */
+.p-card.layout-floating{background:transparent;box-shadow:none;padding:6px 4px;overflow:visible;align-items:stretch}
+.p-card.layout-floating .p-pname-top{color:#fff;font-size:14px;font-weight:900;text-transform:uppercase;text-align:center;line-height:1.15;min-height:38px;display:flex;align-items:center;justify-content:center;padding:0 4px 8px;letter-spacing:.3px}
+.p-card.layout-floating .p-img-box{position:relative;padding:10px;height:140px;display:flex;align-items:center;justify-content:center}
+.p-card.layout-floating .p-img-box img{max-height:100%;max-width:100%;object-fit:contain}
+.p-card.layout-floating .p-badge-price{position:absolute;bottom:-16px;right:-10px;border-radius:50%;width:88px;height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;box-shadow:0 4px 12px rgba(0,0,0,.35);transform:rotate(-8deg);line-height:1;text-align:center}
+.p-card.layout-floating .p-badge-price .rs{font-size:14px;font-weight:900;margin-bottom:-3px}
+.p-card.layout-floating .p-badge-price .big{font-size:30px;font-weight:900}
+.p-card.layout-floating .p-badge-price .un{font-size:9px;font-weight:700;text-transform:uppercase;opacity:.75;margin-top:2px}
+.p-card.layout-floating .p-old{color:#fff;opacity:.7;text-align:center;margin-top:22px}
+
+/* --- CLOUD (estilo Mix Mateus) --- */
+.p-card.layout-cloud{background:transparent;box-shadow:none;padding:8px 4px;align-items:center}
+.p-card.layout-cloud .p-cloud{width:92%;height:130px;display:flex;align-items:center;justify-content:center;padding:14px;flex-shrink:0}
+.p-card.layout-cloud .p-cloud img{max-height:100%;max-width:100%;object-fit:contain}
+.p-card.layout-cloud .p-cloud .noimg{font-size:44px;opacity:.25}
+.p-card.layout-cloud .p-pname-under{color:#fff;font-weight:700;text-align:center;margin-top:12px;font-size:13px;min-height:32px;line-height:1.2;padding:0 4px}
+.p-card.layout-cloud .p-old{color:#fff;opacity:.7;text-align:center;margin-top:4px}
+.p-card.layout-cloud .p-price-flat{font-weight:900;text-align:center;display:flex;align-items:baseline;gap:2px;justify-content:center;margin-top:6px;line-height:1}
+.p-card.layout-cloud .p-price-flat .rs{font-size:14px;align-self:flex-start;padding-top:6px}
+.p-card.layout-cloud .p-price-flat .int{font-size:32px}
+.p-card.layout-cloud .p-price-flat .dec{font-size:18px}
+.p-card.layout-cloud .p-price-flat .un{font-size:11px;opacity:.85;margin-left:5px;text-transform:uppercase;font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
     </div>
+    <h1>Gerador de Encartes<span class="sub">Ofertas para Instagram e WhatsApp</span></h1>
+  </div>
+</header>
 
-    <script>
-      /* ---------- state ---------- */
-      const $ = id => document.getElementById(id);
-      let products = [{
-          name: "Arroz Soltinho 5kg",
-          img: "",
-          price: 15.99,
-          old: 18.99,
-          unit: "unidade",
-          cat: "Mercearia"
-        },
-        {
-          name: "Feijão Carioca 1kg",
-          img: "",
-          price: 7.99,
-          old: 8.99,
-          unit: "pacote",
-          cat: "Mercearia"
-        },
-        {
-          name: "Café Tradicional 500g",
-          img: "",
-          price: 11.99,
-          old: 12.99,
-          unit: "unidade",
-          cat: "Mercearia"
-        },
-        {
-          name: "Refrigerante 2L",
-          img: "",
-          price: 6.49,
-          old: 8.99,
-          unit: "unidade",
-          cat: "Bebidas"
-        },
-      ];
-      let tpl = "classico",
-        fmt = "feed";
+<div class="layout">
+<aside>
 
-      /* ---------- templates (inspirados nos 3 encartes) ---------- */
-      const TPLS = {
-        classico: {
-          label: "Clássico",
-          sw: "linear-gradient(135deg,#1565d8,#0a3d91)",
-          bg: "linear-gradient(160deg,#1e78e8 0%,#0a3d91 55%,#062a68 100%)",
-          headTxt: "#fff",
-          t1: "#fff",
-          t2bg: "#ffe600",
-          t2txt: "#c40000",
-          badgeBg: "#e63946",
-          badgeTxt: "#fff",
-          validBg: "#c40000",
-          validTxt: "#fff",
-          priceBg: "linear-gradient(180deg,#ffd400,#ffb300)",
-          priceTxt: "#c40000",
-          catBg: "#1565d8",
-          offBg: "#e63946",
-          footTxt: "#fff"
-        },
-        vermelho: {
-          label: "Impacto",
-          sw: "linear-gradient(135deg,#e01414,#111)",
-          bg: "linear-gradient(180deg,#141414 0%,#141414 24%, #d31111 24%, #a30909 100%)",
-          headTxt: "#fff",
-          t1: "#ffd400",
-          t2bg: "#e01414",
-          t2txt: "#fff",
-          badgeBg: "#ffd400",
-          badgeTxt: "#7a0000",
-          validBg: "#ffd400",
-          validTxt: "#7a0000",
-          priceBg: "#1b1b1b",
-          priceTxt: "#ffd400",
-          catBg: "#d31111",
-          offBg: "#ff9500",
-          footTxt: "#ffe9a8"
-        },
-        verde: {
-          label: "Natural",
-          sw: "linear-gradient(135deg,#2f9e44,#dff3d8)",
-          bg: "linear-gradient(160deg,#eaf6e2 0%,#d3ecc4 60%,#bfe3ab 100%)",
-          headTxt: "#14481d",
-          t1: "#e8590c",
-          t2bg: "#2f9e44",
-          t2txt: "#fff",
-          badgeBg: "#e8590c",
-          badgeTxt: "#fff",
-          validBg: "#2f9e44",
-          validTxt: "#fff",
-          priceBg: "linear-gradient(180deg,#2f9e44,#237032)",
-          priceTxt: "#fff",
-          catBg: "#2f9e44",
-          offBg: "#e8590c",
-          footTxt: "#14481d"
-        },
-      };
-      const FMTS = {
-        feed: {
-          label: "Instagram Feed",
-          dim: "1080 × 1080",
-          w: 1080,
-          h: 1080,
-          cols: 2
-        },
-        story: {
-          label: "Instagram Status",
-          dim: "1080 × 1920",
-          w: 1080,
-          h: 1920,
-          cols: 2
-        },
-        wfoto: {
-          label: "WhatsApp Foto",
-          dim: "1200 × 1200",
-          w: 1200,
-          h: 1200,
-          cols: 2
-        },
-        wstatus: {
-          label: "WhatsApp Status",
-          dim: "1080 × 1920",
-          w: 1080,
-          h: 1920,
-          cols: 2
-        },
-        auto: {
-          label: "Encarte Completo",
-          dim: "1080 × automático ↕",
-          w: 1080,
-          h: 0,
-          cols: 3
-        },
-      };
+  <!-- PROJETO -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Projeto<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <button class="btn-primary" onclick="saveProject()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Salvar projeto
+      </button>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="$('fileProj').click()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Abrir projeto salvo
+      </button>
+      <input type="file" id="fileProj" accept=".json,application/json" style="display:none" onchange="loadProject(this)">
+      <p class="help">Salve um arquivo .json com todo o seu progresso. Depois é só abrir para continuar de onde parou.</p>
+    </div>
+  </div>
 
-      /* ---------- pickers ---------- */
-      function buildPickers() {
-        $("tplPick").innerHTML = Object.entries(TPLS).map(([k, t]) =>
-          `<div class="tpl ${k===tpl?'on':''}" onclick="tpl='${k}';buildPickers();render()"><div class="sw" style="background:${t.sw}"></div>${t.label}</div>`).join("");
-        $("fmtPick").innerHTML = Object.entries(FMTS).map(([k, f]) =>
-          `<div class="fmt ${k===fmt?'on':''}" onclick="fmt='${k}';buildPickers();render()">${f.label}<small>${f.dim}</small></div>`).join("");
+  <!-- MERCADO -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/><path d="M9 21V13h6v8"/></svg>Dados do mercado<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="f">Nome do mercado</label>
+      <input type="text" id="mName" value="Mercadinho Bom Preço" oninput="render()">
+      <label class="f">Slogan (opcional)</label>
+      <input type="text" id="mSlogan" value="Aqui o preço é baixo de verdade!" oninput="render()">
+      <label class="f">URL da logo (opcional — se vazio usa 🛒)</label>
+      <input type="url" id="mLogo" placeholder="https://exemplo.com/logo.png" oninput="render()">
+      <label class="f">Tamanho da logo: <b id="vLogo">74</b>px</label>
+      <input type="range" min="50" max="220" value="74" id="szLogo" oninput="$('vLogo').textContent=this.value;render()">
+      <label class="f">Rodapé (endereço / telefone / WhatsApp)</label>
+      <input type="text" id="mFoot" value="📍 Rua das Flores, 123 • 📱 (81) 99999-0000" oninput="render()">
+    </div>
+  </div>
+
+  <!-- CAMPANHA -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Campanha<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="f">Título da promoção</label>
+      <input type="text" id="cTitle" value="Semana de Ofertas" oninput="render()">
+      <label class="f">Emojis ao lado do título (opcional)</label>
+      <div class="row">
+        <div>
+          <label class="f" style="margin:0 0 4px">← Esquerdo</label>
+          <input type="text" id="cEmojiL" placeholder="🔥 ou 💥" maxlength="4" oninput="render()">
+        </div>
+        <div>
+          <label class="f" style="margin:0 0 4px">Direito →</label>
+          <input type="text" id="cEmojiR" placeholder="🛒 ou ⭐" maxlength="4" oninput="render()">
+        </div>
+      </div>
+      <div class="emoji-quick">
+        <button type="button" onclick="setEmojis('🔥','🔥')">🔥🔥</button>
+        <button type="button" onclick="setEmojis('💥','💥')">💥💥</button>
+        <button type="button" onclick="setEmojis('⭐','⭐')">⭐⭐</button>
+        <button type="button" onclick="setEmojis('🛒','🛒')">🛒🛒</button>
+        <button type="button" onclick="setEmojis('💰','💰')">💰💰</button>
+        <button type="button" onclick="setEmojis('🎉','🎉')">🎉🎉</button>
+        <button type="button" class="btn-ghost" onclick="setEmojis('','')">Limpar</button>
+      </div>
+      <label class="f">Subtítulo</label>
+      <input type="text" id="cSub" value="Os melhores produtos com os melhores preços" oninput="render()">
+      <label class="f">Tipo de promoção</label>
+      <select id="cType" onchange="render()">
+        <optgroup label="Mercado">
+          <option>Oferta da Semana</option>
+          <option>Oferta Relâmpago</option>
+          <option>Super Ofertas</option>
+          <option>Queima de Estoque</option>
+          <option>Fim de Semana</option>
+          <option>Dia do Cliente</option>
+        </optgroup>
+        <optgroup label="Produtos Naturais">
+          <option>Vida Saudável</option>
+          <option>Semana Vegana</option>
+          <option>Direto do Produtor</option>
+          <option>100% Orgânico</option>
+          <option>Bem-estar</option>
+          <option>Detox da Semana</option>
+        </optgroup>
+        <option value="">— nenhum —</option>
+      </select>
+      <label class="f">Validade</label>
+      <input type="text" id="cValid" value="Válido de 24/07 a 31/07 ou enquanto durar o estoque" oninput="render()">
+    </div>
+  </div>
+
+  <!-- MODELO / FORMATO -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>Modelo e formato<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="f">Modelo visual</label>
+      <div class="tplpick" id="tplPick"></div>
+      <label class="chk"><input type="checkbox" id="showDeco" checked onchange="render()"> Mostrar decoração temática (emojis nos cantos)</label>
+      <label class="f">Fundo do encarte</label>
+      <select id="bgMode" onchange="render()">
+        <option value="tpl">Usar fundo do modelo</option>
+        <option value="cor">Cor personalizada (degradê)</option>
+        <option value="solida">Cor personalizada (sólida)</option>
+        <option value="img">Imagem de fundo (URL)</option>
+      </select>
+      <div id="bgCorBox" style="display:none">
+        <div class="row">
+          <div><label class="f">Cor de cima</label><input type="color" id="bgC1" value="#1e78e8" oninput="render()"></div>
+          <div id="bgC2Wrap"><label class="f">Cor de baixo</label><input type="color" id="bgC2" value="#062a68" oninput="render()"></div>
+        </div>
+      </div>
+      <div id="bgImgBox" style="display:none">
+        <label class="f">URL da imagem de fundo</label>
+        <input type="url" id="bgImg" placeholder="https://exemplo.com/fundo.jpg" oninput="render()">
+        <label class="chk"><input type="checkbox" id="bgDark" checked onchange="render()"> Escurecer imagem (texto mais legível)</label>
+      </div>
+      <label class="f">Formato de publicação</label>
+      <div class="fmtpick" id="fmtPick"></div>
+    </div>
+  </div>
+
+  <!-- TEXTO -->
+  <div class="sec closed">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>Tipografia e cores<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="f">Fonte do encarte</label>
+      <select id="tFont" onchange="render()">
+        <option value="'Segoe UI',Arial,sans-serif">Padrão (Segoe UI)</option>
+        <option value="Arial,Helvetica,sans-serif">Arial</option>
+        <option value="'Arial Black',Arial,sans-serif">Arial Black (grossa)</option>
+        <option value="Impact,'Arial Black',sans-serif">Impact (encarte)</option>
+        <option value="Verdana,Geneva,sans-serif">Verdana</option>
+        <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
+        <option value="Georgia,'Times New Roman',serif">Georgia (serifada)</option>
+        <option value="'Courier New',monospace">Courier (máquina)</option>
+      </select>
+      <label class="f">Tamanho do título da promoção: <b id="vT1">62</b>px</label>
+      <input type="range" min="36" max="96" value="62" id="szTitle" oninput="$('vT1').textContent=this.value;render()">
+      <label class="f">Tamanho do nome do produto: <b id="vT2">17</b>px</label>
+      <input type="range" min="12" max="28" value="17" id="szPname" oninput="$('vT2').textContent=this.value;render()">
+      <label class="f">Tamanho do preço: <b id="vT3">40</b>px</label>
+      <input type="range" min="26" max="60" value="40" id="szPrice" oninput="$('vT3').textContent=this.value;render()">
+      <label class="chk"><input type="checkbox" id="useColors" onchange="render()"> Personalizar cores do texto</label>
+      <div id="colorBox" style="display:none">
+        <div class="row">
+          <div><label class="f">Título</label><input type="color" id="cT1" value="#ffffff" oninput="render()"></div>
+          <div><label class="f">Cabeçalho</label><input type="color" id="cHead" value="#ffffff" oninput="render()"></div>
+        </div>
+        <div class="row">
+          <div><label class="f">Nome do produto</label><input type="color" id="cPname" value="#222222" oninput="render()"></div>
+          <div><label class="f">Preço</label><input type="color" id="cPrice" value="#c40000" oninput="render()"></div>
+        </div>
+        <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="$('useColors').checked=false;render()">Voltar às cores do modelo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELEMENTOS -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Elementos do encarte<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="chk"><input type="checkbox" id="showSlogan" checked onchange="render()"> Mostrar slogan</label>
+      <label class="chk"><input type="checkbox" id="showType" checked onchange="render()"> Mostrar tipo de promoção</label>
+      <label class="chk"><input type="checkbox" id="showCat" checked onchange="render()"> Mostrar categoria nos produtos</label>
+      <label class="chk"><input type="checkbox" id="showValid" checked onchange="render()"> Mostrar validade</label>
+      <label class="chk"><input type="checkbox" id="showOld" checked onchange="render()"> Mostrar preço antigo (riscado)</label>
+      <label class="chk"><input type="checkbox" id="showOff" checked onchange="render()"> Mostrar selo de desconto (%)</label>
+      <label class="chk"><input type="checkbox" id="showFoot" checked onchange="render()"> Mostrar rodapé</label>
+      <label class="chk"><input type="checkbox" id="autoRemoveBg" checked> Remover fundo das imagens automaticamente ao adicionar</label>
+      <label class="chk"><input type="checkbox" id="removeBg" checked onchange="render()"> Remover fundo branco no visual (mix-blend, para imagens não tratadas)</label>
+      <p class="help">A remoção automática processa a imagem quando você adiciona ou edita um produto, gerando um PNG transparente de verdade. Detecta e apaga fundos brancos, pretos ou qualquer cor sólida das quinas.</p>
+    </div>
+  </div>
+
+  <!-- PRODUTOS -->
+  <div class="sec">
+    <h2 onclick="tg(this)"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4l-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Produtos<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></h2>
+    <div class="body">
+      <label class="f">Nome do produto</label>
+      <input type="text" id="pName" placeholder="Arroz Soltinho 5kg">
+      <label class="f">Imagem do produto</label>
+      <input type="url" id="pImg" placeholder="Cole a URL aqui, ou use os botões abaixo" oninput="previewImg()">
+      <div class="img-tools">
+        <button type="button" class="btn-secondary" onclick="$('pImgFile').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Enviar foto
+        </button>
+      </div>
+      <input type="file" id="pImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this)">
+      <div id="pImgPreview" class="img-preview" style="display:none"></div>
+      <p class="help">📷 <b>Enviar foto</b> abre a câmera ou galeria do dispositivo. Ou cole a URL de uma imagem no campo acima.</p>
+      <div class="row">
+        <div>
+          <label class="f">Preço promocional (R$)</label>
+          <input type="number" id="pPrice" step="0.01" min="0" placeholder="15,99">
+        </div>
+        <div>
+          <label class="f">Preço antigo (opcional)</label>
+          <input type="number" id="pOld" step="0.01" min="0" placeholder="18,99">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label class="f">Vendido por</label>
+          <select id="pUnit">
+            <option value="unidade">Unidade</option>
+            <option value="caixa">Caixa</option>
+            <option value="kg">Kg</option>
+            <option value="pacote">Pacote</option>
+            <option value="fardo">Fardo</option>
+            <option value="dúzia">Dúzia</option>
+          </select>
+        </div>
+        <div>
+          <label class="f">Categoria</label>
+          <select id="pCat">
+            <optgroup label="Mercado">
+              <option>Mercearia</option><option>Bebidas</option><option>Hortifruti</option>
+              <option>Açougue</option><option>Frios e Laticínios</option><option>Padaria</option>
+              <option>Limpeza</option><option>Higiene</option><option>Pet</option><option>Bazar</option>
+            </optgroup>
+            <optgroup label="Produtos Naturais">
+              <option>Orgânicos</option>
+              <option>Grãos e Cereais</option>
+              <option>Chás e Infusões</option>
+              <option>Suplementos</option>
+              <option>Sementes e Castanhas</option>
+              <option>Farinhas Integrais</option>
+              <option>Ervas e Temperos</option>
+              <option>Sucos e Kombuchas</option>
+              <option>Veganos e Vegetarianos</option>
+              <option>Sem Glúten / Sem Lactose</option>
+              <option>Cosméticos Naturais</option>
+              <option>Bem-estar</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <button class="btn-add" id="btnAdd" onclick="addProd()">Adicionar produto</button>
+      <button class="btn-secondary" id="btnCancel" style="display:none;width:100%;margin-top:8px" onclick="cancelEdit()">Cancelar edição</button>
+      <div class="prodlist" id="plist"></div>
+    </div>
+  </div>
+
+</aside>
+
+<main>
+  <div class="toolbar">
+    <button class="btn-dl" onclick="download()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar PNG
+    </button>
+    <button class="btn-proj" onclick="saveProject()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar projeto
+    </button>
+    <div class="zoombox">Zoom <input type="range" min="20" max="100" value="42" id="zoom" oninput="applyZoom()"> <b id="zoomv">42%</b></div>
+  </div>
+  <div id="stageWrap"><div id="scale"><div id="poster"></div></div></div>
+</main>
+</div>
+
+<nav id="tabbar">
+  <button id="tabEdit" class="on" onclick="setTab('edit')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Editar
+  </button>
+  <button id="tabPrev" onclick="setTab('preview')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Visualizar
+  </button>
+</nav>
+
+<script>
+/* ---------- state ---------- */
+const $=id=>document.getElementById(id);
+let products=[
+ {name:"Arroz Soltinho 5kg", img:"", price:15.99, old:18.99, unit:"unidade", cat:"Mercearia"},
+ {name:"Feijão Carioca 1kg", img:"", price:7.99, old:8.99, unit:"pacote", cat:"Mercearia"},
+ {name:"Café Tradicional 500g", img:"", price:11.99, old:12.99, unit:"unidade", cat:"Mercearia"},
+ {name:"Refrigerante 2L", img:"", price:6.49, old:8.99, unit:"unidade", cat:"Bebidas"},
+];
+let tpl="classico", fmt="feed";
+
+/* ---------- templates ---------- */
+const TPLS={
+ classico:{ label:"Clássico", sw:"linear-gradient(135deg,#1565d8,#0a3d91)",
+   bg:"linear-gradient(160deg,#1e78e8 0%,#0a3d91 55%,#062a68 100%)",
+   headTxt:"#fff", t1:"#fff", t2bg:"#ffe600", t2txt:"#c40000",
+   badgeBg:"#e63946", badgeTxt:"#fff", validBg:"#c40000", validTxt:"#fff",
+   priceBg:"linear-gradient(180deg,#ffd400,#ffb300)", priceTxt:"#c40000",
+   catBg:"#1565d8", offBg:"#e63946", footTxt:"#fff"},
+ vermelho:{ label:"Impacto", sw:"linear-gradient(135deg,#e01414,#111)",
+   bg:"linear-gradient(180deg,#141414 0%,#141414 24%, #d31111 24%, #a30909 100%)",
+   headTxt:"#fff", t1:"#ffd400", t2bg:"#e01414", t2txt:"#fff",
+   badgeBg:"#ffd400", badgeTxt:"#7a0000", validBg:"#ffd400", validTxt:"#7a0000",
+   priceBg:"#1b1b1b", priceTxt:"#ffd400",
+   catBg:"#d31111", offBg:"#ff9500", footTxt:"#ffe9a8"},
+ verde:{ label:"Natural", sw:"linear-gradient(135deg,#2f9e44,#dff3d8)",
+   bg:"linear-gradient(160deg,#eaf6e2 0%,#d3ecc4 60%,#bfe3ab 100%)",
+   headTxt:"#14481d", t1:"#e8590c", t2bg:"#2f9e44", t2txt:"#fff",
+   badgeBg:"#e8590c", badgeTxt:"#fff", validBg:"#2f9e44", validTxt:"#fff",
+   priceBg:"linear-gradient(180deg,#2f9e44,#237032)", priceTxt:"#fff",
+   catBg:"#2f9e44", offBg:"#e8590c", footTxt:"#14481d"},
+
+ /* ---------- festas do Brasil ---------- */
+ junina:{ label:"🔥 Festa Junina", sw:"linear-gradient(135deg,#e63946,#f4a261,#ffd166)",
+   bg:"linear-gradient(180deg,#f4a261 0%,#e76f51 45%,#c1121f 100%)",
+   pattern:`repeating-linear-gradient(45deg,rgba(255,255,255,.06) 0 24px,rgba(0,0,0,.06) 24px 48px)`,
+   deco:["🔥","🌽","🎪","🎉"],
+   headTxt:"#fff8e7", t1:"#fff8e7", t2bg:"#ffd166", t2txt:"#7a2a0f",
+   badgeBg:"#ffd166", badgeTxt:"#7a2a0f", validBg:"#7a2a0f", validTxt:"#ffd166",
+   priceBg:"linear-gradient(180deg,#ffd166,#f4a261)", priceTxt:"#7a2a0f",
+   catBg:"#c1121f", offBg:"#7a2a0f", footTxt:"#fff8e7"},
+
+ carnaval:{ label:"🎭 Carnaval", sw:"linear-gradient(135deg,#e91e63,#ffeb3b,#00bcd4,#8e24aa)",
+   bg:"linear-gradient(135deg,#8e24aa 0%,#e91e63 30%,#ff9800 60%,#00bcd4 100%)",
+   deco:["🎭","🎉","🪅","🎊"],
+   headTxt:"#fff", t1:"#ffeb3b", t2bg:"#e91e63", t2txt:"#fff",
+   badgeBg:"#ffeb3b", badgeTxt:"#8e24aa", validBg:"#8e24aa", validTxt:"#ffeb3b",
+   priceBg:"linear-gradient(180deg,#ffeb3b,#ff9800)", priceTxt:"#8e24aa",
+   catBg:"#e91e63", offBg:"#00bcd4", footTxt:"#fff"},
+
+ natal:{ label:"🎄 Natal", sw:"linear-gradient(135deg,#c8102e,#0d5e2e,#f5c518)",
+   bg:"linear-gradient(160deg,#0d5e2e 0%,#0a4522 50%,#c8102e 100%)",
+   deco:["🎄","🎅","⭐","🎁"],
+   headTxt:"#fff", t1:"#ffd700", t2bg:"#c8102e", t2txt:"#fff",
+   badgeBg:"#ffd700", badgeTxt:"#7a0000", validBg:"#c8102e", validTxt:"#ffd700",
+   priceBg:"linear-gradient(180deg,#ffd700,#e0b000)", priceTxt:"#c8102e",
+   catBg:"#0d5e2e", offBg:"#c8102e", footTxt:"#fff"},
+
+ maes:{ label:"🌷 Dia das Mães", sw:"linear-gradient(135deg,#ff8fab,#ffc2d1,#ffb3c1)",
+   bg:"linear-gradient(160deg,#ffe3ec 0%,#ffb3c1 55%,#ff6f9c 100%)",
+   deco:["🌷","💐","💖","🌹"],
+   headTxt:"#6d123a", t1:"#c9184a", t2bg:"#ff477e", t2txt:"#fff",
+   badgeBg:"#c9184a", badgeTxt:"#fff", validBg:"#6d123a", validTxt:"#ffd6e0",
+   priceBg:"linear-gradient(180deg,#c9184a,#7a1136)", priceTxt:"#fff",
+   catBg:"#ff477e", offBg:"#c9184a", footTxt:"#6d123a"},
+
+ pais:{ label:"👔 Dia dos Pais", sw:"linear-gradient(135deg,#1b3a57,#8d5524,#0f1e2b)",
+   bg:"linear-gradient(160deg,#1b3a57 0%,#0f1e2b 55%,#3a2a1a 100%)",
+   deco:["👔","🎁","🍺","⚙️"],
+   headTxt:"#f2e4c6", t1:"#f2e4c6", t2bg:"#c9963c", t2txt:"#0f1e2b",
+   badgeBg:"#c9963c", badgeTxt:"#0f1e2b", validBg:"#0f1e2b", validTxt:"#f2e4c6",
+   priceBg:"linear-gradient(180deg,#c9963c,#8d5524)", priceTxt:"#fff",
+   catBg:"#1b3a57", offBg:"#c9963c", footTxt:"#f2e4c6"},
+
+ criancas:{ label:"🎈 Dia das Crianças", sw:"linear-gradient(135deg,#00c2ff,#ffea00,#ff5ea8)",
+   bg:"linear-gradient(160deg,#00c2ff 0%,#7ee8fa 40%,#ffea00 70%,#ff5ea8 100%)",
+   deco:["🎈","🧸","🎁","🍭"],
+   headTxt:"#0a3a5c", t1:"#e91e63", t2bg:"#ffea00", t2txt:"#0a3a5c",
+   badgeBg:"#e91e63", badgeTxt:"#fff", validBg:"#0a3a5c", validTxt:"#ffea00",
+   priceBg:"linear-gradient(180deg,#ff5ea8,#c9184a)", priceTxt:"#fff",
+   catBg:"#00c2ff", offBg:"#e91e63", footTxt:"#0a3a5c"},
+
+ anonovo:{ label:"🎆 Fim de Ano", sw:"linear-gradient(135deg,#111,#ffd700,#111)",
+   bg:"radial-gradient(circle at 20% 20%,#ffd700 0%,transparent 40%),radial-gradient(circle at 80% 30%,#c9a227 0%,transparent 35%),linear-gradient(180deg,#0a0a0a 0%,#1a1200 100%)",
+   deco:["🎆","🥂","✨","🎇"],
+   headTxt:"#ffd700", t1:"#ffd700", t2bg:"#ffd700", t2txt:"#0a0a0a",
+   badgeBg:"#ffd700", badgeTxt:"#0a0a0a", validBg:"#0a0a0a", validTxt:"#ffd700",
+   priceBg:"linear-gradient(180deg,#ffd700,#c9a227)", priceTxt:"#0a0a0a",
+   catBg:"#8a6a00", offBg:"#c9a227", footTxt:"#ffd700"},
+
+ /* ---------- modelos inspirados em encartes de mercados reais ---------- */
+ atacadao:{ label:"🏬 Atacadão", layout:"tag", sw:"linear-gradient(135deg,#f0dfae,#a91b1b,#204d20)",
+   bg:"radial-gradient(ellipse at top,#fff2c9 0%,#f0dcac 45%,#e0c88a 100%)",
+   pattern:`repeating-linear-gradient(90deg,rgba(169,27,27,.04) 0 2px,transparent 2px 90px)`,
+   deco:["💰","🏷️"],
+   headTxt:"#5a1010", t1:"#a91b1b", t2bg:"#204d20", t2txt:"#fff8e0",
+   badgeBg:"#a91b1b", badgeTxt:"#fff8e0", validBg:"#204d20", validTxt:"#fff8e0",
+   priceBg:"linear-gradient(180deg,#ffd700,#f0a500)", priceTxt:"#a91b1b",
+   catBg:"#204d20", offBg:"#a91b1b", footTxt:"#5a1010"},
+
+ marca:{ label:"⭐ Ofertas de Marca", layout:"floating", sw:"linear-gradient(135deg,#4aa0e6,#0d2e6e)",
+   bg:"linear-gradient(180deg,#4aa0e6 0%,#1e5e9f 45%,#0d2e6e 100%)",
+   deco:["⭐","💙"],
+   headTxt:"#fff", t1:"#ffe600", t2bg:"#ffe600", t2txt:"#0d2e6e",
+   badgeBg:"#ffe600", badgeTxt:"#0d2e6e", validBg:"#e63946", validTxt:"#fff",
+   priceBg:"#ffe600", priceTxt:"#0d2e6e",
+   catBg:"#0d2e6e", offBg:"#e63946", footTxt:"#fff"},
+
+ corporativo:{ label:"🏢 Corporativo", layout:"cloud", sw:"linear-gradient(135deg,#1a72d1,#083f88)",
+   bg:"linear-gradient(160deg,#1a72d1 0%,#0e5cae 55%,#083f88 100%)",
+   pattern:`radial-gradient(circle at 90% 10%,rgba(255,255,255,.05) 0%,transparent 40%)`,
+   headTxt:"#fff", t1:"#fff", t2bg:"#ffcc00", t2txt:"#0e2f66",
+   badgeBg:"#e63946", badgeTxt:"#fff", validBg:"#0e2f66", validTxt:"#ffcc00",
+   priceBg:"transparent", priceTxt:"#ffcc00",
+   catBg:"#e63946", offBg:"#ffcc00", footTxt:"#e6ecf3"},
+
+ /* ---------- loja de produtos naturais / empório orgânico ---------- */
+ naturais:{ label:"🌿 Produtos Naturais", sw:"linear-gradient(135deg,#e8dcc0,#7a8f5a,#3d4a1f)",
+   bg:"linear-gradient(160deg,#f4ecd8 0%,#e8dcc0 45%,#d4c8a0 100%)",
+   pattern:`repeating-linear-gradient(0deg,rgba(122,143,90,.04) 0 60px,transparent 60px 120px)`,
+   deco:["🌿","🌾"],
+   headTxt:"#3d4a1f", t1:"#5a6b3e", t2bg:"#7a8f5a", t2txt:"#fff8e7",
+   badgeBg:"#a05c2c", badgeTxt:"#fff8e7", validBg:"#3d4a1f", validTxt:"#f4ecd8",
+   priceBg:"linear-gradient(180deg,#7a8f5a,#5a6b3e)", priceTxt:"#fff8e7",
+   catBg:"#a05c2c", offBg:"#a05c2c", footTxt:"#3d4a1f"},
+};
+const FMTS={
+ feed:{label:"Instagram Feed",dim:"1080 × 1080",w:1080,h:1080},
+ story:{label:"Instagram Status",dim:"1080 × 1920",w:1080,h:1920},
+ wfoto:{label:"WhatsApp Foto",dim:"1200 × 1200",w:1200,h:1200},
+ wstatus:{label:"WhatsApp Status",dim:"1080 × 1920",w:1080,h:1920},
+ auto:{label:"Encarte Completo",dim:"1080 × automático ↕",w:1080,h:0},
+};
+
+/* ---------- pickers ---------- */
+function buildPickers(){
+  $("tplPick").innerHTML=Object.entries(TPLS).map(([k,t])=>
+   `<div class="tpl ${k===tpl?'on':''}" onclick="tpl='${k}';buildPickers();render()"><div class="sw" style="background:${t.sw}"></div>${t.label}</div>`).join("");
+  $("fmtPick").innerHTML=Object.entries(FMTS).map(([k,f])=>
+   `<div class="fmt ${k===fmt?'on':''}" onclick="fmt='${k}';buildPickers();render()">${f.label}<small>${f.dim}</small></div>`).join("");
+}
+function tg(h){h.parentElement.classList.toggle("closed")}
+function setEmojis(l,r){$("cEmojiL").value=l;$("cEmojiR").value=r;render()}
+
+/* ---------- products (com edição) ---------- */
+let editIdx=null;
+/* --- ferramentas de imagem: upload local, busca web, preview --- */
+function handleImgUpload(input){
+  const file=input.files[0]; if(!file)return;
+  const rd=new FileReader();
+  rd.onload=e=>{ $("pImg").value=e.target.result; previewImg(); };
+  rd.readAsDataURL(file);
+  input.value="";
+}
+function previewImg(){
+  const val=$("pImg").value.trim(), prev=$("pImgPreview");
+  if(!val){prev.style.display="none";prev.innerHTML="";return}
+  const isData=val.startsWith("data:");
+  prev.style.display="flex";
+  prev.innerHTML=`
+    <img src="${val}" onerror="this.style.display='none'">
+    <div class="info">
+      <b>${isData?"Imagem enviada do dispositivo":"Imagem por URL"}</b>
+      ${isData?"Pronta para adicionar":val.length>50?val.slice(0,50)+"…":val}
+    </div>
+    <button type="button" onclick="clearImg()">Remover</button>`;
+}
+function clearImg(){$("pImg").value="";previewImg()}
+/* --- REMOVEDOR DE FUNDO --- */
+/* Carrega imagem via proxy CORS (images.weserv.nl) e devolve img pronto para canvas */
+function loadImageCORS(url){
+  return new Promise((resolve,reject)=>{
+    /* upload local ou blob — carrega direto, sem proxy */
+    if(url.startsWith("data:")||url.startsWith("blob:")){
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=reject;
+      img.src=url;
+      return;
+    }
+    const cleanUrl=url.replace(/^https?:\/\//,"");
+    const proxied=`https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&n=-1`;
+    const img=new Image(); img.crossOrigin="anonymous";
+    img.onload=()=>resolve(img);
+    img.onerror=()=>{
+      /* fallback: tenta direto (funciona em hosts com CORS) */
+      const img2=new Image(); img2.crossOrigin="anonymous";
+      img2.onload=()=>resolve(img2);
+      img2.onerror=reject;
+      img2.src=url;
+    };
+    img.src=proxied;
+  });
+}
+/* Remove pixels similares às cores das quinas (chroma keying) */
+function removeBgFromImage(imgData){
+  const {data,width,height}=imgData;
+  /* Amostra 4 quinas (região 10x10) para estimar cor de fundo */
+  const sample=(x0,y0)=>{
+    let r=0,g=0,b=0,n=0;
+    for(let y=y0;y<y0+10&&y<height;y++){
+      for(let x=x0;x<x0+10&&x<width;x++){
+        const i=(y*width+x)*4;
+        r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++;
       }
+    }
+    return [r/n,g/n,b/n];
+  };
+  const corners=[
+    sample(0,0), sample(width-10,0),
+    sample(0,height-10), sample(width-10,height-10)
+  ];
+  /* Média das quinas — cor dominante de fundo */
+  const bg=corners.reduce((a,c)=>[a[0]+c[0]/4,a[1]+c[1]/4,a[2]+c[2]/4],[0,0,0]);
+  /* Distância entre quinas — se muito grande, imagem já é transparente ou tem fundo variado, aborta */
+  let maxDiff=0;
+  for(let i=0;i<corners.length;i++){
+    for(let j=i+1;j<corners.length;j++){
+      const d=Math.hypot(corners[i][0]-corners[j][0],corners[i][1]-corners[j][1],corners[i][2]-corners[j][2]);
+      if(d>maxDiff)maxDiff=d;
+    }
+  }
+  if(maxDiff>80)return false; /* quinas muito diferentes, não remover para evitar estragar */
 
-      function tg(h) {
-        h.parentElement.classList.toggle("closed")
-      }
+  const threshold=70;   /* distância p/ transparência total */
+  const softness=45;    /* zona de transição */
+  for(let i=0;i<data.length;i+=4){
+    const dr=data[i]-bg[0], dg=data[i+1]-bg[1], db=data[i+2]-bg[2];
+    const dist=Math.sqrt(dr*dr+dg*dg+db*db);
+    if(dist<threshold){
+      data[i+3]=0;
+    }else if(dist<threshold+softness){
+      const alpha=Math.round(((dist-threshold)/softness)*255);
+      data[i+3]=Math.min(data[i+3],alpha);
+    }
+  }
+  return true;
+}
+/* Processa uma URL e devolve base64 com fundo removido (ou a URL original se falhar) */
+async function processProductImage(url){
+  if(!url)return url;
+  try{
+    const img=await loadImageCORS(url);
+    /* Limita tamanho para performance (máx 800px na maior dimensão) */
+    const scale=Math.min(1,800/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.round(img.naturalWidth*scale), h=Math.round(img.naturalHeight*scale);
+    const canvas=document.createElement("canvas");
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext("2d",{willReadFrequently:true});
+    ctx.drawImage(img,0,0,w,h);
+    const imgData=ctx.getImageData(0,0,w,h);
+    const ok=removeBgFromImage(imgData);
+    if(!ok)return url; /* fundo não uniforme */
+    ctx.clearRect(0,0,w,h);
+    ctx.putImageData(imgData,0,0);
+    return canvas.toDataURL("image/png");
+  }catch(e){
+    console.warn("Falha ao processar imagem:",e);
+    return url; /* volta para URL original — mix-blend cuida do fundo branco */
+  }
+}
 
-      /* ---------- products ---------- */
-      let editIdx = null;
-
-      function addProd() {
-        const name = $("pName").value.trim();
-        const price = parseFloat($("pPrice").value);
-        if (!name || isNaN(price)) {
-          alert("Preencha pelo menos o nome e o preço promocional.");
-          return
-        }
-        const obj = {
-          name,
-          img: $("pImg").value.trim(),
-          price,
-          old: parseFloat($("pOld").value) || null,
-          unit: $("pUnit").value,
-          cat: $("pCat").value
-        };
-        if (editIdx !== null) {
-          products[editIdx] = obj;
-          cancelEdit()
-        } else products.push(obj);
-        $("pName").value = $("pImg").value = $("pPrice").value = $("pOld").value = "";
-        renderList();
-        render();
-      }
-
-      function editProd(i) {
-        const p = products[i];
-        editIdx = i;
-        $("pName").value = p.name;
-        $("pImg").value = p.img;
-        $("pPrice").value = p.price;
-        $("pOld").value = p.old || "";
-        $("pUnit").value = p.unit;
-        $("pCat").value = p.cat;
-        $("btnAdd").textContent = "💾 Salvar alterações";
-        $("btnAdd").style.background = "#f0a020";
-        $("btnCancel").style.display = "block";
-        renderList();
-        $("pName").scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-        $("pName").focus();
-      }
-
-      function cancelEdit() {
-        editIdx = null;
-        $("pName").value = $("pImg").value = $("pPrice").value = $("pOld").value = "";
-        $("btnAdd").textContent = "+ Adicionar produto";
-        $("btnAdd").style.background = "var(--ok)";
-        $("btnCancel").style.display = "none";
-        renderList();
-      }
-
-      function delProd(i) {
-        if (editIdx === i) cancelEdit();
-        products.splice(i, 1);
-        renderList();
-        render()
-      }
-
-      function mv(i, d) {
-        const j = i + d;
-        if (j < 0 || j >= products.length) return;
-        [products[i], products[j]] = [products[j], products[i]];
-        renderList();
-        render()
-      }
-
-      function renderList() {
-        $("plist").innerHTML = products.map((p, i) => `
-   <div class="pitem" style="${i===editIdx?'border-color:#f0a020':''}">
-     ${p.img?`<img src="${p.img}" onerror="this.style.display='none'">`:`<div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px">📦</div>`}
+async function addProd(){
+  const name=$("pName").value.trim();
+  const price=parseFloat($("pPrice").value);
+  if(!name||isNaN(price)){alert("Preencha pelo menos o nome e o preço promocional.");return}
+  const url=$("pImg").value.trim();
+  const btn=$("btnAdd"); const origLabel=btn.textContent;
+  let finalImg=url;
+  if(url&&$("autoRemoveBg").checked){
+    btn.disabled=true; btn.textContent="Removendo fundo…";
+    finalImg=await processProductImage(url);
+    btn.disabled=false;
+  }
+  const obj={name, img:finalImg, price,
+    old:parseFloat($("pOld").value)||null, unit:$("pUnit").value, cat:$("pCat").value};
+  if(editIdx!==null){products[editIdx]=obj;cancelEdit()}
+  else{products.push(obj);btn.textContent=origLabel}
+  $("pName").value=$("pImg").value=$("pPrice").value=$("pOld").value="";
+  previewImg();
+  renderList(); render();
+}
+function editProd(i){
+  const p=products[i]; editIdx=i;
+  $("pName").value=p.name; $("pImg").value=p.img;
+  $("pPrice").value=p.price; $("pOld").value=p.old||"";
+  $("pUnit").value=p.unit; $("pCat").value=p.cat;
+  $("btnAdd").textContent="Salvar alterações"; $("btnAdd").style.background="var(--warn)";
+  $("btnCancel").style.display="block";
+  previewImg();
+  renderList();
+  $("pName").scrollIntoView({behavior:"smooth",block:"center"}); $("pName").focus();
+}
+function cancelEdit(){
+  editIdx=null;
+  $("pName").value=$("pImg").value=$("pPrice").value=$("pOld").value="";
+  $("btnAdd").textContent="Adicionar produto"; $("btnAdd").style.background="var(--accent)";
+  $("btnCancel").style.display="none";
+  previewImg();
+  renderList();
+}
+function delProd(i){if(editIdx===i)cancelEdit();products.splice(i,1);renderList();render()}
+function mv(i,d){const j=i+d;if(j<0||j>=products.length)return;[products[i],products[j]]=[products[j],products[i]];renderList();render()}
+function renderList(){
+  $("plist").innerHTML=products.map((p,i)=>`
+   <div class="pitem" style="${i===editIdx?'border-color:var(--warn)':''}">
+     ${p.img?`<img src="${p.img}" onerror="this.style.display='none'">`:`<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:5px">📦</div>`}
      <div class="pinfo"><b>${esc(p.name)}</b><span>R$ ${fmtP(p.price)} / ${p.unit} • ${p.cat}</span></div>
      <div class="acts">
-       <button onclick="editProd(${i})" title="Editar" style="color:#ffd21e">✎</button>
-       <button onclick="mv(${i},-1)" title="Subir">↑</button>
-       <button onclick="mv(${i},1)" title="Descer">↓</button>
-       <button class="del" onclick="delProd(${i})" title="Remover">✕</button>
+       <button onclick="editProd(${i})" title="Editar" style="color:var(--warn)">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+       </button>
+       <button onclick="mv(${i},-1)" title="Subir">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+       </button>
+       <button onclick="mv(${i},1)" title="Descer">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+       </button>
+       <button class="del" onclick="delProd(${i})" title="Remover">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+       </button>
      </div>
-   </div>`).join("") || `<div style="color:var(--mut);font-size:13px;text-align:center;padding:8px">Nenhum produto adicionado.</div>`;
-      }
-      const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-      const fmtP = v => v.toFixed(2).replace(".", ",");
+   </div>`).join("")||`<div style="color:var(--mut);font-size:13px;text-align:center;padding:8px">Nenhum produto adicionado.</div>`;
+}
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+const fmtP=v=>Number(v).toFixed(2).replace(".",",");
 
-      /* ---------- poster render ---------- */
-      function render() {
-        const t = TPLS[tpl],
-          f = FMTS[fmt];
-        const P = $("poster");
-        const isAuto = f.h === 0;
-        P.style.width = f.w + "px";
-        P.style.height = isAuto ? "auto" : f.h + "px";
-        P.style.minHeight = isAuto ? f.w + "px" : "";
-        P.style.background = t.bg;
-        P.style.fontFamily = $("tFont").value;
-        const useC = $("useColors").checked;
-        $("colorBox").style.display = useC ? "block" : "none";
-        const colT1 = useC ? $("cT1").value : t.t1;
-        const colHead = useC ? $("cHead").value : t.headTxt;
-        const colPname = useC ? $("cPname").value : "#222";
-        const colPrice = useC ? $("cPrice").value : t.priceTxt;
-        const szT = $("szTitle").value,
-          szN = $("szPname").value,
-          szP = $("szPrice").value;
-        const story = !isAuto && f.h > f.w;
-        const cols = isAuto ? (products.length >= 3 ? 3 : Math.max(products.length, 1)) : (story ? 2 : (products.length <= 2 ? products.length || 1 : products.length <= 4 ? 2 : 3));
-        const logo = $("mLogo").value.trim();
-        const type = $("cType").value;
-        const cards = products.map(p => {
-          const off = (p.old && p.old > p.price) ? Math.round((1 - p.price / p.old) * 100) : 0;
-          const [ip, dp] = fmtP(p.price).split(",");
-          return `<div class="p-card">
-      ${$("showCat").checked?`<div class="p-cat" style="background:${t.catBg}">${esc(p.cat)}</div>`:""}
-      ${$("showOff").checked&&off>0?`<div class="p-off" style="background:${t.offBg}">-${off}%</div>`:""}
-      <div class="p-img">${p.img?`<img src="${p.img}" crossorigin="anonymous" onerror="this.outerHTML='<div class=noimg>🛍️</div>'">`:`<div class="noimg">🛍️</div>`}</div>
+/* ---------- salvar / abrir projeto ---------- */
+const FIELDS=["mName","mSlogan","mLogo","mFoot","cTitle","cSub","cType","cValid","cEmojiL","cEmojiR",
+  "tFont","szTitle","szPname","szPrice","szLogo","cT1","cHead","cPname","cPrice",
+  "bgMode","bgC1","bgC2","bgImg"];
+const CHECKS=["useColors","showSlogan","showType","showCat","showValid","showOld","showOff","showFoot","bgDark","showDeco","removeBg","autoRemoveBg"];
+function saveProject(){
+  const data={app:"gerador-encartes",versao:1,salvoEm:new Date().toISOString(),
+    tpl, fmt, products,
+    campos:Object.fromEntries(FIELDS.map(id=>[id,$(id).value])),
+    opcoes:Object.fromEntries(CHECKS.map(id=>[id,$(id).checked]))};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.download=`projeto-encarte-${new Date().toISOString().slice(0,10)}.json`;
+  a.href=URL.createObjectURL(blob); a.click();
+  URL.revokeObjectURL(a.href);
+}
+function loadProject(inp){
+  const file=inp.files[0]; if(!file)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(d.app!=="gerador-encartes"||!Array.isArray(d.products)) throw 0;
+      products=d.products;
+      if(TPLS[d.tpl])tpl=d.tpl;
+      if(FMTS[d.fmt])fmt=d.fmt;
+      FIELDS.forEach(id=>{if(d.campos&&d.campos[id]!==undefined)$(id).value=d.campos[id]});
+      CHECKS.forEach(id=>{if(d.opcoes&&d.opcoes[id]!==undefined)$(id).checked=d.opcoes[id]});
+      $("vT1").textContent=$("szTitle").value;
+      $("vT2").textContent=$("szPname").value;
+      $("vT3").textContent=$("szPrice").value;
+      $("vLogo").textContent=$("szLogo").value;
+      cancelEdit(); buildPickers(); renderList(); render();
+      alert(`Projeto aberto! ${products.length} produto(s) carregado(s).`);
+    }catch(e){alert("Este arquivo não é um projeto válido do Gerador de Encartes.")}
+  };
+  rd.readAsText(file); inp.value="";
+}
+
+/* ---------- poster render ---------- */
+function render(){
+  const t=TPLS[tpl], f=FMTS[fmt];
+  const P=$("poster");
+  const isAuto=f.h===0;
+  P.style.width=f.w+"px";
+  P.style.height=isAuto?"auto":f.h+"px";
+  P.style.minHeight=isAuto?f.w+"px":"";
+  // fundo: modelo, cor personalizada ou imagem por URL
+  const bgm=$("bgMode").value;
+  $("bgCorBox").style.display=(bgm==="cor"||bgm==="solida")?"block":"none";
+  $("bgC2Wrap").style.display=bgm==="cor"?"block":"none";
+  $("bgImgBox").style.display=bgm==="img"?"block":"none";
+  if(bgm==="cor") P.style.background=`linear-gradient(160deg,${$("bgC1").value} 0%,${$("bgC2").value} 100%)`;
+  else if(bgm==="solida") P.style.background=$("bgC1").value;
+  else if(bgm==="img"&&$("bgImg").value.trim()){
+    const dark=$("bgDark").checked?"linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.55)),":"";
+    P.style.background=`${dark}url('${$("bgImg").value.trim().replace(/'/g,"%27")}') center/cover no-repeat`;
+  }
+  else P.style.background=t.bg;
+  P.style.fontFamily=$("tFont").value;
+  P.classList.toggle("no-bg",$("removeBg").checked);
+  const useC=$("useColors").checked;
+  $("colorBox").style.display=useC?"block":"none";
+  const colT1=useC?$("cT1").value:t.t1;
+  const colHead=useC?$("cHead").value:t.headTxt;
+  const colPname=useC?$("cPname").value:"#222";
+  const colPrice=useC?$("cPrice").value:t.priceTxt;
+  const szT=$("szTitle").value, szN=$("szPname").value, szP=$("szPrice").value;
+  const story=!isAuto&&f.h>f.w;
+  const cols = isAuto ? (products.length>=3?3:Math.max(products.length,1)) : (story ? 2 : (products.length<=2?products.length||1: products.length<=4?2:3));
+  const logo=$("mLogo").value.trim();
+  const type=$("cType").value;
+  const layout=t.layout||"classic";
+  const cards=products.map(p=>{
+    const off=(p.old&&p.old>p.price)?Math.round((1-p.price/p.old)*100):0;
+    const [ip,dp]=fmtP(p.price).split(",");
+    const imgHtml=p.img?`<img src="${p.img}" crossorigin="anonymous" onerror="this.outerHTML='<div class=noimg>🛍️</div>'">`:`<div class="noimg">🛍️</div>`;
+    const catBadge=$("showCat").checked?`<div class="p-cat" style="background:${t.catBg}">${esc(p.cat)}</div>`:"";
+    const offBadge=$("showOff").checked&&off>0?`<div class="p-off" style="background:${t.offBg}">-${off}%</div>`:"";
+    const oldPrice=$("showOld").checked&&p.old?`<div class="p-old">de R$ ${fmtP(p.old)}</div>`:"";
+
+    if(layout==="tag"){
+      /* CRICARÉ: nome em cima pequeno, imagem meio, faixa amarela embaixo com R$ + preço grande */
+      return `<div class="p-card layout-tag">
+        ${catBadge}
+        <div class="p-pname-top" style="color:${colPname}">${esc(p.name)}</div>
+        <div class="p-img">${imgHtml}</div>
+        ${oldPrice}
+        <div class="p-tag" style="background:${t.priceBg};color:${colPrice}">
+          ${$("showOff").checked&&off>0?`<div class="p-tag-off">-${off}%</div>`:""}
+          <span class="rs">R$</span><span class="int">${ip}</span><span class="dec">,${dp}</span><span class="un">/${esc(p.unit)}</span>
+        </div>
+      </div>`;
+    }
+    if(layout==="floating"){
+      /* IRANDA: sem card, nome em CAIXA ALTA branco em cima, imagem em caixa branca com selo redondo amarelo colado */
+      return `<div class="p-card layout-floating">
+        <div class="p-pname-top" style="color:${colHead}">${esc(p.name)}</div>
+        <div class="p-img-box">
+          ${imgHtml}
+          <div class="p-badge-price" style="background:${t.priceBg};color:${colPrice}">
+            <span class="rs">R$</span><span class="big">${ip},${dp}</span><span class="un">${esc(p.unit)}</span>
+          </div>
+        </div>
+        ${oldPrice}
+      </div>`;
+    }
+    if(layout==="cloud"){
+      /* MIX MATEUS: fundo em nuvem branca redonda, nome embaixo em branco, preço amarelo sem faixa */
+      return `<div class="p-card layout-cloud">
+        <div class="p-cloud">${imgHtml}</div>
+        <div class="p-pname-under" style="color:${colHead}">${esc(p.name)}</div>
+        ${oldPrice}
+        <div class="p-price-flat" style="color:${colPrice}">
+          <span class="rs">R$</span><span class="int">${ip}</span><span class="dec">,${dp}</span><span class="un">/${esc(p.unit)}</span>
+        </div>
+      </div>`;
+    }
+    /* CLÁSSICO (padrão dos demais modelos) */
+    return `<div class="p-card">
+      ${catBadge}
+      ${offBadge}
+      <div class="p-img">${imgHtml}</div>
       <div class="p-pname" style="font-size:${szN}px;color:${colPname}">${esc(p.name)}</div>
-      ${$("showOld").checked&&p.old?`<div class="p-old">de R$ ${fmtP(p.old)}</div>`:""}
+      ${oldPrice}
       <div class="p-price" style="background:${t.priceBg};color:${colPrice}">
         <span class="rs">R$</span><span class="int" style="font-size:${szP}px">${ip}</span><span class="dec" style="font-size:${Math.round(szP*.5)}px">,${dp}</span><span class="un">/ ${esc(p.unit)}</span>
       </div>
     </div>`;
-        }).join("") || `<div class="p-empty" style="color:${t.headTxt}">Adicione produtos no painel ao lado 👈</div>`;
+  }).join("")||`<div class="p-empty" style="color:${colHead}">Adicione produtos no painel ao lado 👈</div>`;
 
-        P.innerHTML = `
-   <div class="p-head" style="color:${colHead}">
+  const showDeco=$("showDeco").checked;
+  const deco=(bgm==="tpl"&&showDeco&&t.deco)?
+    `<div class="p-deco bl">${t.deco[0]||""}</div>
+     <div class="p-deco br">${t.deco[1]||""}</div>`:"";
+  const pattern=(bgm==="tpl"&&t.pattern)?`<div class="p-pattern" style="background:${t.pattern}"></div>`:"";
+  P.innerHTML=`${pattern}${deco}
+   <div class="p-head" style="color:${colHead};position:relative;z-index:2">
      <div class="p-brand">
-       <div class="p-logo">${logo?`<img src="${logo}" crossorigin="anonymous" onerror="this.outerHTML='🛒'">`:"🛒"}</div>
+       <div class="p-logo" style="width:${$("szLogo").value}px;height:${$("szLogo").value}px;font-size:${Math.round($("szLogo").value*.52)}px">${logo?`<img src="${logo}" crossorigin="anonymous" onerror="this.outerHTML='🛒'">`:"🛒"}</div>
        <div>
          <div class="p-name">${esc($("mName").value)}</div>
          ${$("showSlogan").checked&&$("mSlogan").value?`<div class="p-slogan">${esc($("mSlogan").value)}</div>`:""}
        </div>
      </div>
      <div class="p-title">
-       <div class="t1" style="color:${colT1};font-size:${szT}px">${esc($("cTitle").value)}</div>
+       <div class="t1" style="color:${colT1};font-size:${szT}px">${$("cEmojiL").value?`<span style="margin-right:.25em">${esc($("cEmojiL").value)}</span>`:""}${esc($("cTitle").value)}${$("cEmojiR").value?`<span style="margin-left:.25em">${esc($("cEmojiR").value)}</span>`:""}</div>
        ${$("cSub").value?`<div class="t2" style="background:${t.t2bg};color:${t.t2txt}">${esc($("cSub").value)}</div>`:""}
      </div>
      ${$("showType").checked&&type?`<div class="p-badges"><div class="p-badge" style="background:${t.badgeBg};color:${t.badgeTxt}">🔥 ${esc(type)}</div></div>`:""}
      ${$("showValid").checked&&$("cValid").value?`<div class="p-valid" style="background:${t.validBg};color:${t.validTxt}">${esc($("cValid").value)}</div>`:""}
    </div>
-   <div class="p-grid" style="grid-template-columns:repeat(${cols},1fr);align-content:${story?'center':'start'};${story&&products.length<=4?'padding-left:90px;padding-right:90px;gap:26px':''}">${cards}</div>
-   ${$("showFoot").checked&&$("mFoot").value?`<div class="p-foot" style="color:${t.footTxt}"><div class="f1">${esc($("mFoot").value)}</div><div class="f2">Ofertas válidas enquanto durar o estoque • Imagens meramente ilustrativas</div></div>`:""}`;
-        applyZoom();
-      }
-
-      function applyZoom() {
-        const z = $("zoom").value / 100,
-          f = FMTS[fmt];
-        $("zoomv").textContent = $("zoom").value + "%";
-        $("scale").style.transform = `scale(${z})`;
-        $("scale").style.width = f.w + "px";
-        const realH = f.h || $("poster").offsetHeight;
-        $("scale").parentElement.style.width = (f.w * z + 40) + "px";
-        $("scale").parentElement.style.height = (realH * z + 40) + "px";
-      }
-      /* ---------- download ---------- */
-      async function download() {
-        const btn = document.querySelector(".btn-dl");
-        btn.textContent = "⏳ Gerando...";
-        const f = FMTS[fmt];
-        const isAuto = f.h === 0;
-        // clona o encarte para fora da tela, SEM o zoom/transform do preview
-        const box = document.createElement("div");
-        box.style.cssText = `position:fixed;left:0;top:0;width:${f.w}px;transform:none;z-index:-1;opacity:0;pointer-events:none;overflow:hidden`;
-        const clone = $("poster").cloneNode(true);
-        clone.id = "posterExport";
-        clone.style.width = f.w + "px";
-        clone.style.height = isAuto ? "auto" : f.h + "px";
-        clone.style.transform = "none";
-        box.appendChild(clone);
-        document.body.appendChild(box);
-        // aguarda as imagens do clone carregarem
-        await Promise.all([...clone.querySelectorAll("img")].map(im => im.complete ? 1 : new Promise(r => {
-          im.onload = im.onerror = r
-        })));
-        const outH = isAuto ? clone.offsetHeight : f.h;
-        box.style.height = outH + "px";
-        try {
-          const canvas = await html2canvas(clone, {
-            width: f.w,
-            height: outH,
-            windowWidth: f.w,
-            windowHeight: outH,
-            scale: 1,
-            useCORS: true,
-            allowTaint: false,
-            backgroundColor: "#ffffff",
-            logging: false
-          });
-          const a = document.createElement("a");
-          a.download = `encarte-${fmt}-${Date.now()}.png`;
-          a.href = canvas.toDataURL("image/png");
-          a.click();
-        } catch (e) {
-          alert("Não foi possível gerar a imagem. Se usou imagens externas, o site delas pode bloquear o download — tente hospedar em outro serviço (ex.: imgur, postimages).")
-        }
-        box.remove();
-        btn.textContent = "⬇️ Baixar imagem (PNG)";
-      }
-      /* ---------- projeto: salvar / importar ---------- */
-      const FIELDS = ["mName", "mSlogan", "mLogo", "mFoot", "cTitle", "cSub", "cType", "cValid",
-        "tFont", "szTitle", "szPname", "szPrice", "cT1", "cHead", "cPname", "cPrice"
-      ];
-      const CHECKS = ["showSlogan", "showType", "showCat", "showValid", "showOld", "showOff", "showFoot", "useColors"];
-
-      function saveProject() {
-        const data = {
-          app: "gerador-encartes",
-          versao: 1,
-          salvoEm: new Date().toISOString(),
-          tpl,
-          fmt,
-          products,
-          campos: Object.fromEntries(FIELDS.map(id => [id, $(id).value])),
-          opcoes: Object.fromEntries(CHECKS.map(id => [id, $(id).checked]))
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], {
-          type: "application/json"
-        });
-        const a = document.createElement("a");
-        a.download = `projeto-encarte-${new Date().toISOString().slice(0,10)}.json`;
-        a.href = URL.createObjectURL(blob);
-        a.click();
-        URL.revokeObjectURL(a.href);
-      }
-
-      function importProject(inp) {
-        const file = inp.files[0];
-        if (!file) return;
-        const rd = new FileReader();
-        rd.onload = () => {
-          try {
-            const d = JSON.parse(rd.result);
-            if (d.app !== "gerador-encartes" || !Array.isArray(d.products)) throw 0;
-            products = d.products;
-            if (TPLS[d.tpl]) tpl = d.tpl;
-            if (FMTS[d.fmt]) fmt = d.fmt;
-            FIELDS.forEach(id => {
-              if (d.campos && d.campos[id] !== undefined) $(id).value = d.campos[id]
-            });
-            CHECKS.forEach(id => {
-              if (d.opcoes && d.opcoes[id] !== undefined) $(id).checked = d.opcoes[id]
-            });
-            $("vT1").textContent = $("szTitle").value;
-            $("vT2").textContent = $("szPname").value;
-            $("vT3").textContent = $("szPrice").value;
-            cancelEdit();
-            buildPickers();
-            renderList();
-            render();
-            alert(`Projeto importado! ${products.length} produto(s) carregado(s).`);
-          } catch (e) {
-            alert("Arquivo inválido. Selecione um projeto salvo por este sistema (.json).")
-          }
-        };
-        rd.readAsText(file);
-        inp.value = "";
-      }
-      /* ---------- init ---------- */
-      buildPickers();
-      renderList();
-      render();
-    </script>
-
-  </body>
-
+   <div class="p-grid" style="position:relative;z-index:2;grid-template-columns:repeat(${cols},1fr);align-content:${story?'center':'start'};gap:${layout==='floating'?'34px 20px':'16px'};${story&&products.length<=4?'padding-left:90px;padding-right:90px':''}">${cards}</div>
+   ${$("showFoot").checked&&$("mFoot").value?`<div class="p-foot" style="position:relative;z-index:2;color:${useC?$("cHead").value:t.footTxt}"><div class="f1">${esc($("mFoot").value)}</div><div class="f2">Ofertas válidas enquanto durar o estoque • Imagens meramente ilustrativas</div></div>`:""}`;
+  beautifyEmojis(P);
+  applyZoom();
+}
+/* substitui emojis nativos por Twemoji (Twitter) — bonitos e iguais em qualquer sistema */
+function beautifyEmojis(el){
+  if(!window.twemoji||!el)return;
+  try{
+    twemoji.parse(el,{
+      folder:"svg", ext:".svg",
+      base:"https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/",
+      attributes:()=>({crossorigin:"anonymous"})
+    });
+  }catch(e){}
+}
+function applyZoom(){
+  const f=FMTS[fmt];
+  let z=$("zoom").value/100;
+  // no celular, ajusta o zoom automaticamente para caber na tela
+  if(isMobile()){
+    const avail=Math.min(window.innerWidth,document.documentElement.clientWidth)-40;
+    z=Math.max(.1,Math.min(1,avail/f.w));
+  }
+  $("zoomv").textContent=Math.round(z*100)+"%";
+  $("scale").style.transform=`scale(${z})`;
+  $("scale").style.width=f.w+"px";
+  const realH=f.h||$("poster").offsetHeight;
+  $("scale").parentElement.style.width=(f.w*z+(isMobile()?20:40))+"px";
+  $("scale").parentElement.style.height=(realH*z+(isMobile()?20:40))+"px";
+}
+/* ---------- mobile ---------- */
+const isMobile=()=>window.matchMedia("(max-width:960px)").matches;
+function setTab(t){
+  document.body.classList.toggle("m-edit",t==="edit");
+  document.body.classList.toggle("m-preview",t==="preview");
+  $("tabEdit").classList.toggle("on",t==="edit");
+  $("tabPrev").classList.toggle("on",t==="preview");
+  if(t==="preview"){render();window.scrollTo(0,0)}
+}
+window.addEventListener("resize",()=>{
+  if(isMobile()){
+    if(!document.body.classList.contains("m-edit")&&!document.body.classList.contains("m-preview")) setTab("edit");
+  }else{
+    document.body.classList.remove("m-edit","m-preview");
+  }
+  applyZoom();
+});
+if(isMobile()) setTab("edit");
+/* ---------- download PNG ---------- */
+async function download(){
+  const btn=document.querySelector(".btn-dl"); const orig=btn.innerHTML; btn.textContent="Gerando…";
+  const f=FMTS[fmt];
+  const isAuto=f.h===0;
+  const box=document.createElement("div");
+  box.style.cssText=`position:fixed;left:0;top:0;width:${f.w}px;transform:none;z-index:-1;opacity:0;pointer-events:none;overflow:hidden`;
+  const clone=$("poster").cloneNode(true);
+  clone.id="posterExport";
+  clone.style.width=f.w+"px";
+  clone.style.height=isAuto?"auto":f.h+"px";
+  clone.style.transform="none";
+  box.appendChild(clone); document.body.appendChild(box);
+  beautifyEmojis(clone);
+  await Promise.all([...clone.querySelectorAll("img")].map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r})));
+  const outH=isAuto?clone.offsetHeight:f.h;
+  box.style.height=outH+"px";
+  try{
+    const canvas=await html2canvas(clone,{
+      width:f.w, height:outH, windowWidth:f.w, windowHeight:outH,
+      scale:1, useCORS:true, allowTaint:false, backgroundColor:"#ffffff", logging:false
+    });
+    const a=document.createElement("a");
+    a.download=`encarte-${fmt}-${Date.now()}.png`;
+    a.href=canvas.toDataURL("image/png");
+    a.click();
+  }catch(e){alert("Não foi possível gerar a imagem. Se usou imagens externas, o site delas pode bloquear o download — tente hospedar em outro serviço (ex.: imgur, postimages).")}
+  box.remove();
+  btn.innerHTML=orig;
+}
+/* ---------- init ---------- */
+buildPickers(); renderList(); render();
+</script>
+</body>
 </html>
